@@ -1,0 +1,80 @@
+# =========================================================================
+# DRY-RUN CONFIGURATION — Hybrid Skeletonization OCR
+# =========================================================================
+project:
+  name: "Hybrid Skeletonization OCR Research (Dry-run)"
+  output_dir: "dry_run_outputs"
+  random_seed: 42
+  log_level: "INFO"
+
+hardware:
+  use_gpu: false
+  mixed_precision: false
+  gpu_memory_growth: false
+  num_workers: 1
+
+datasets:
+  chars74k:
+    csv_path: "datasets/annotations.csv"
+    raw_dir: "datasets/raw"
+    skeleton_dir: "datasets/skeletonize"
+    preprocessing_size: [64, 64]
+    model_input_size: [32, 32]
+    test_split: 0.2
+
+  emnist:
+    enabled: false                   # Disabled for fast CPU dry-run
+
+preprocessing:
+  default_threshold: 35
+  threshold_sweep: [0, 35]          # Tiny sweep for dry-run speed
+
+training:
+  epochs: 1                         # 1 epoch to verify training
+  batch_size: 128
+  optimizer: "adam"
+  learning_rate: 0.001
+  early_stopping:
+    enabled: false
+  augmentation:
+    rotation_range: 0.02
+    translation_range: 0.04
+
+experiments:
+  baselines:
+    enabled: true
+    models:
+      hog_svm:
+        enabled: false               # Disabled to avoid long CPU SVM training
+      mobilenetv2:
+        enabled: true
+        alpha: 0.35
+        pretrained: false
+      iso_parameter_cnn:
+        enabled: true
+      standard_cnn:
+        enabled: true
+      hybrid_skeleton:
+        enabled: true
+
+  controlled_experiment:
+    enabled: true
+    architectures:
+      - name: "small"
+        filters: [16, 32]
+        dense_units: 64
+    input_types: ["raw", "skeleton"]
+
+  threshold_sensitivity:
+    enabled: true
+
+  cross_dataset:
+    enabled: false
+
+  latency_benchmark:
+    enabled: true
+    warmup_iterations: 5
+    benchmark_iterations: 10
+
+  skeleton_quality:
+    enabled: true
