@@ -1,0 +1,16 @@
+=== S8 + S6 RESOLUTION 64x64 EXPERIMENTS REPORT ===
+
+Model A: Hybrid Skeleton S1+S8+S3+SE+S2 (Baseline 64x64)
+- Parameters: 571,644
+- Chars74K Strict Accuracy: 81.83%
+- Chars74K Tolerant Accuracy: 87.61%
+- Average Latency: 1.9903 ms/image
+- Training Duration: 2.33 min
+
+Model B: Hybrid Skeleton S1+S8+S3+SE+S2+S6_v3 (Distilled 64x64)
+- Parameters: 571,644
+- Chars74K Strict Accuracy: 82.48%
+- Chars74K Tolerant Accuracy: 89.03%
+- Average Latency: 2.0455 ms/image
+- Training Duration (Distillation): 1.82 min
+

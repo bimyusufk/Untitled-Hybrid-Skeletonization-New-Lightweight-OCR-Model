@@ -142,6 +142,15 @@ def _train_keras(model, X_train, y_train, X_test, y_test, model_name,
             verbose=1,
         ))
 
+    # TensorBoard logging setup
+    tb_log_dir = os.path.join(OUTPUT_DIR, "tensorboard", save_key or model_name.replace(" ", "_").lower())
+    callbacks.append(tf.keras.callbacks.TensorBoard(
+        log_dir=tb_log_dir,
+        histogram_freq=1,
+        write_graph=True,
+        update_freq="epoch",
+    ))
+
     logger.info(f"Training {model_name}: epochs={tc['epochs']}, "
                 f"batch_size={tc['batch_size']}, "
                 f"params={count_params(model):,}")

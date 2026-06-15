@@ -31,4 +31,12 @@ datasets/emnist/
 datasets/skeletonize/
 datasets/hole-filling/
 datasets/otsu-thresholding/
+datasets/*.npz
 *.png
+
+# Archives and transfer files
+*.zip
+*.tar
+
+# Evaluation outputs folders
+ocr_evaluation_outputs_*/

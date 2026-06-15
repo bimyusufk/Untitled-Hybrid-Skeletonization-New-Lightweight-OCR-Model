@@ -1,0 +1,18 @@
+=== S4 EXPERIMENT COMPARISON REPORT ===
+
+Model: Hybrid Skeleton S1+S3+SE
+- Parameters: 213,868
+- Chars74K Strict Accuracy: 79.23%
+- Chars74K Tolerant Accuracy: 85.14%
+- Average Latency: 1.1206 ms
+- Epochs Trained: 27
+- Training Duration: 40.99 min
+
+Model: Hybrid Skeleton S1+S3+CBAM
+- Parameters: 214,165
+- Chars74K Strict Accuracy: 78.78%
+- Chars74K Tolerant Accuracy: 85.01%
+- Average Latency: 0.6056 ms
+- Epochs Trained: 18
+- Training Duration: 15.11 min
+

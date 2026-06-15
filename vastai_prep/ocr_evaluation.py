@@ -85,9 +85,7 @@ def _save_confusion_matrix(y_true, y_pred, class_names, output_path, title):
 
 
 def _save_prediction_samples(X_test, y_true_chars, y_pred_chars, output_path, title, max_samples=12):
-    # Extract images if X_test is a list/tuple of inputs (images are always the first input)
-    images = X_test[0] if isinstance(X_test, (list, tuple)) else X_test
-    sample_count = min(max_samples, len(images))
+    sample_count = min(max_samples, len(X_test))
     if sample_count == 0:
         return
 
@@ -97,7 +95,7 @@ def _save_prediction_samples(X_test, y_true_chars, y_pred_chars, output_path, ti
 
     for index in range(sample_count):
         ax = plt.subplot(rows, cols, index + 1)
-        image = images[index].squeeze()
+        image = X_test[index].squeeze()
         ax.imshow(image, cmap="gray")
         ax.set_title(f"T:{y_true_chars[index]} | P:{y_pred_chars[index]}", fontsize=8)
         ax.axis("off")
@@ -165,16 +163,11 @@ def evaluate_ocr_model(
 ):
     _ensure_directory(output_dir)
 
-    test_len = len(X_test[0]) if isinstance(X_test, (list, tuple)) else len(X_test)
-    if test_len == 0:
+    if len(X_test) == 0:
         raise ValueError("X_test is empty; cannot evaluate OCR model.")
 
-    if test_len > 0:
-        if isinstance(X_test, (list, tuple)):
-            warmup_input = [inp[:1] for inp in X_test]
-        else:
-            warmup_input = X_test[:1]
-        _ = model.predict(warmup_input, batch_size=1, verbose=0)
+    if len(X_test) > 0:
+        _ = model.predict(X_test[:1], batch_size=1, verbose=0)
 
     start_time = time.perf_counter()
     predictions = model.predict(X_test, batch_size=batch_size, verbose=0)

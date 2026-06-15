@@ -1,0 +1,153 @@
+# =========================================================================
+# RESEARCH CONFIGURATION — Hybrid Skeletonization OCR for Edge Computing
+# =========================================================================
+# Seluruh eksperimen dikontrol dari file ini.
+# Jalankan: python run_all_experiments.py [--config config.yaml]
+# =========================================================================
+
+project:
+  name: "Hybrid Skeletonization OCR Research"
+  output_dir: "research_outputs"
+  random_seed: 42
+  log_level: "INFO"          # DEBUG | INFO | WARNING | ERROR
+
+# =========================================================================
+# HARDWARE — Vast.ai GPU Compatible
+# =========================================================================
+hardware:
+  use_gpu: true
+  mixed_precision: false     # Set true untuk A100/V100/H100
+  gpu_memory_growth: true    # Mencegah TF mengalokasikan seluruh VRAM
+  num_workers: 4
+
+# =========================================================================
+# DATASETS
+# =========================================================================
+datasets:
+  chars74k:
+    csv_path: "datasets/annotations.csv"
+    raw_dir: "datasets/raw"
+    skeleton_dir: "datasets/skeletonize"
+    preprocessing_size: [64, 64]   # Ukuran input preprocessing pipeline
+    model_input_size: [32, 32]     # Ukuran input CNN
+    test_split: 0.2
+
+  emnist:
+    enabled: true
+    subset: "byclass"              # 62 kelas, cocok dengan Chars74K
+    max_test_samples: 3000
+    download_dir: "datasets/emnist"
+
+# =========================================================================
+# PREPROCESSING
+# =========================================================================
+preprocessing:
+  default_threshold: 35            # Threshold hole-filling default (piksel)
+  threshold_sweep: [0, 5, 7, 15, 35, 70]
+
+# =========================================================================
+# TRAINING
+# =========================================================================
+training:
+  epochs: 30
+  batch_size: 64                   # Besar untuk GPU; turunkan jika OOM
+  optimizer: "adam"
+  learning_rate: 0.001
+
+  early_stopping:
+    enabled: true
+    patience: 10
+    monitor: "val_accuracy"
+    restore_best_weights: true
+
+  augmentation:
+    rotation_range: 0.02           # ~7.2 derajat
+    translation_range: 0.04        # ~1.2 piksel pada 32×32
+
+# =========================================================================
+# EXPERIMENTS
+# =========================================================================
+experiments:
+
+  # --- Exp 1: Baseline Comparison (5 model) ---
+  baselines:
+    enabled: true
+    models:
+      hog_svm:
+        enabled: true
+        hog_orientations: 9
+        hog_pixels_per_cell: [8, 8]
+        hog_cells_per_block: [2, 2]
+        svm_kernel: "rbf"
+        svm_C: 10.0
+
+      mobilenetv2:
+        enabled: true
+        alpha: 0.35                # Width multiplier untuk versi ringan
+        pretrained: false          # Train from scratch untuk perbandingan adil
+
+      iso_parameter_cnn:
+        enabled: true
+        # Arsitektur identik hybrid (16-32-64, Dense 128) pada raw images
+
+      standard_cnn:
+        enabled: true
+        # 32-64-128 filters, Dense 256 pada raw images
+
+      hybrid_skeleton:
+        enabled: true
+        # 16-32-64 filters, Dense 128 pada skeleton images
+
+  # --- Exp 2: Controlled Variable Experiment ---
+  controlled_experiment:
+    enabled: true
+    architectures:
+      - name: "small"
+        filters: [16, 32, 64]
+        dense_units: 128
+      - name: "large"
+        filters: [32, 64, 128]
+        dense_units: 256
+    input_types: ["raw", "skeleton", "skeleton_augmented"]
+
+  # --- Exp 3: Threshold Sensitivity Analysis ---
+  threshold_sensitivity:
+    enabled: true
+    # Menggunakan preprocessing.threshold_sweep
+
+  # --- Exp 4: Cross-Dataset Validation (EMNIST) ---
+  cross_dataset:
+    enabled: true
+
+  # --- Exp 5: Rigorous Latency Benchmark ---
+  latency_benchmark:
+    enabled: true
+    warmup_iterations: 100
+    benchmark_iterations: 1000
+    per_sample: true               # Timing per-sampel individual
+
+  # --- Exp 6: Skeleton Quality Analysis ---
+  skeleton_quality:
+    enabled: true
+
+# =========================================================================
+# EVALUATION METRICS
+# =========================================================================
+evaluation:
+  metrics:
+    strict_accuracy: true
+    tolerant_accuracy: true
+    macro_f1: true
+    per_cluster_f1: true           # F1 terpisah: digits, uppercase, lowercase
+    confusion_matrix: true
+    classification_report: true
+
+  latency_stats:
+    num_runs: 1000
+    warmup: 100
+    report_mean: true
+    report_std: true
+    report_ci95: true
+    report_median: true
+    report_p99: true
+    statistical_test: "wilcoxon"

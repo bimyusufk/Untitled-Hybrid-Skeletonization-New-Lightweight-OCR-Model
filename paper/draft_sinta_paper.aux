@@ -11,38 +11,46 @@
 \newlabel{sec:metode}{{II}{2}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Gambaran Umum Sistem}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Dataset dan Preprocessing}{2}{}\protected@file@percent }
+\citation{cohen2017emnist}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Diagram blok arsitektur model keseluruhan mulai dari input hingga output.}}{3}{}\protected@file@percent }
 \newlabel{fig:arch_diagram}{{1}{3}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Tahapan hasil prapemrosesan data karakter: Citra Asli (Raw) $\to $ Otsu Thresholding $\to $ Conditional Hole-Filling ($\le 7$ piksel) $\to $ Citra Skeletonized (1 piksel).}}{3}{}\protected@file@percent }
-\newlabel{fig:preprocess_compare}{{2}{3}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Karakteristik Distribusi Kelas Dataset Chars74K}}{3}{}\protected@file@percent }
+\newlabel{tab:class_dist}{{I}{3}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Arsitektur Model}{3}{}\protected@file@percent }
 \citation{lecun1998gradient}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Tahapan hasil prapemrosesan data karakter: Citra Asli (Raw) $\to $ Otsu Thresholding $\to $ Conditional Hole-Filling ($\le 7$ piksel) $\to $ Citra Skeletonized (1 piksel).}}{4}{}\protected@file@percent }
+\newlabel{fig:preprocess_compare}{{2}{4}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Model Baseline Standar Industri}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-E}}Fungsi Loss}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-F}}Konfigurasi Pelatihan}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-G}}Metrik Evaluasi}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {III}Hasil Penelitian}{4}{}\protected@file@percent }
 \newlabel{sec:hasil}{{III}{4}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Hasil Perbandingan dengan Baseline}{4}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Perbandingan Performa Pengenalan Karakter Alphanumeric}}{4}{}\protected@file@percent }
-\newlabel{tab:comparison}{{I}{4}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Ablation Study}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Visualisasi Hasil Deteksi}{4}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Studi Ablasi Komponen Model Hybrid Skeletonized}}{5}{}\protected@file@percent }
-\newlabel{tab:ablation}{{II}{5}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Kurva Pelatihan Akurasi dan Loss Model Hybrid Skeletonized Baru.}}{5}{}\protected@file@percent }
-\newlabel{fig:training}{{3}{5}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Analisis Kecepatan dan Efisiensi}{5}{}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Gambar contoh sampel hasil klasifikasi karakter benar dan salah.}}{5}{}\protected@file@percent }
-\newlabel{fig:detect_sample}{{4}{5}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Perbandingan Grafik Benchmark OCR Kecepatan dan Akurasi.}}{5}{}\protected@file@percent }
-\newlabel{fig:benchmark}{{5}{5}{}{}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Pembahasan}{5}{}\protected@file@percent }
-\newlabel{sec:pembahasan}{{IV}{5}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Interpretasi Hasil Utama}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Perbandingan dengan Literatur}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Analisis Kegagalan}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Keterbatasan dan Implikasi Praktis}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Hasil Perbandingan dengan Baseline Eksternal}{5}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Perbandingan Performa Pengenalan Alphanumeric pada Chars74K}}{5}{}\protected@file@percent }
+\newlabel{tab:comparison}{{II}{5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Eksperimen Variabel Terkontrol (Fase 1)}{5}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Hasil Eksperimen Variabel Terkontrol}}{5}{}\protected@file@percent }
+\newlabel{tab:controlled}{{III}{5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Analisis Sensitivitas Threshold Hole-Filling dan Kualitas Skeleton}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Cross-Dataset Validation (EMNIST)}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Benchmark Latensi Rigoris dan Wilcoxon Signed-Rank Test}{5}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Analisis Sensitivitas Threshold Hole-Filling Terhadap Akurasi dan Kualitas Geometris Skeleton}}{6}{}\protected@file@percent }
+\newlabel{tab:threshold_quality}{{IV}{6}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Evaluasi Generalisasi Lintas Dataset (Train: Chars74K, Test: EMNIST)}}{6}{}\protected@file@percent }
+\newlabel{tab:cross_dataset}{{V}{6}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Statistik Deskriptif Latensi Inferensi Sekuensial ($N=1000$ run)}}{6}{}\protected@file@percent }
+\newlabel{tab:latency}{{VI}{6}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Grafik perbandingan akurasi, Macro F1, parameter model, dan waktu inferensi batch untuk kelima model pembanding.}}{6}{}\protected@file@percent }
+\newlabel{fig:baseline_compare}{{3}{6}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Kurva sensitivitas pengaruh variasi threshold hole-filling terhadap akurasi OCR (kiri) dan parameter kualitas geometris rangka (kanan).}}{6}{}\protected@file@percent }
+\newlabel{fig:threshold_sens}{{4}{6}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Histogram distribusi latensi inferensi sekuensial ($N=1000$ run) untuk masing-masing arsitektur deep learning.}}{6}{}\protected@file@percent }
+\newlabel{fig:latency_dist}{{5}{6}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Pembahasan}{6}{}\protected@file@percent }
+\newlabel{sec:pembahasan}{{IV}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Interpretasi Keunggulan Geometris dan Generalisasi}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Pembersihan Derau Topologi Secara Empiris}{6}{}\protected@file@percent }
 \bibcite{zhang1984fast}{1}
 \bibcite{lecun1998gradient}{2}
 \bibcite{he2016deep}{3}
@@ -52,7 +60,9 @@
 \bibcite{shi2015edge}{7}
 \bibcite{decampos2009character}{8}
 \bibcite{shi2022rcrn}{9}
-\@writefile{toc}{\contentsline {section}{\numberline {V}Kesimpulan}{6}{}\protected@file@percent }
-\newlabel{sec:kesimpulan}{{V}{6}{}{}{}}
-\@writefile{toc}{\contentsline {section}{References}{6}{}\protected@file@percent }
-\gdef \@abspage@last{6}
+\bibcite{cohen2017emnist}{10}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Evaluasi Kausal Efisiensi Arsitektur}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Kesimpulan}{7}{}\protected@file@percent }
+\newlabel{sec:kesimpulan}{{V}{7}{}{}{}}
+\@writefile{toc}{\contentsline {section}{References}{7}{}\protected@file@percent }
+\gdef \@abspage@last{7}
