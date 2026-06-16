@@ -4,18 +4,18 @@
 ### Protokol Eksperimen
 - **Dataset**: Chars74K (64x64, Grayscale, Preprocessed on-the-fly)
 - **Split**: Train 6164 | Val 770 | Test 771 (seed=42)
-- **Epochs**: 2 (early stopping patience=2)
+- **Epochs**: 50 (early stopping patience=10)
 - **Fitur Topologi**: Euler, Eccentricity, Aspect Ratio, Extent, Solidity
 
 ### Hasil Perbandingan Komparatif
 
-| Model               | Input Type             | Hybrid (Topologi)   | Parameters   |   Strict Acc (%) |   Tolerant Acc (%) |   Latency (ms) |
-|:--------------------|:-----------------------|:--------------------|:-------------|-----------------:|-------------------:|---------------:|
-| Shallow_CNN_Only    | Clean Binary           | NO                  | 556,190      |             0    |               0    |         0.6111 |
-| Shallow_CNN_Hybrid  | Clean Binary           | YES                 | 556,500      |             1.56 |               1.56 |         0.5648 |
-| Gradient_CNN_Only   | Morphological Gradient | NO                  | 556,190      |             1.56 |               3.12 |         0.7607 |
-| Gradient_CNN_Hybrid | Morphological Gradient | YES                 | 556,500      |             6.25 |               6.25 |         0.7191 |
-| Proposed_1M_Raw     | Clean Binary           | NO                  | 1,074,987    |             1.56 |               3.12 |         1.1724 |
+| Model               | Input Type             | Hybrid (Topologi)   |   Parameters |   Strict Acc (%) |   Tolerant Acc (%) |   Latency (ms) |
+|:--------------------|:-----------------------|:--------------------|-------------:|-----------------:|-------------------:|---------------:|
+| Shallow_CNN_Only    | Clean Binary           | NO                  |      556,190 |            78.47 |              85.73 |         0.0101 |
+| Shallow_CNN_Hybrid  | Clean Binary           | YES                 |      556,500 |            79.51 |              86.38 |         0.0113 |
+| Gradient_CNN_Only   | Morphological Gradient | NO                  |      556,190 |            78.73 |              85.73 |         0.0095 |
+| Gradient_CNN_Hybrid | Morphological Gradient | YES                 |      556,500 |            79.9  |              86.9  |         0.0084 |
+| Proposed_1M_Raw     | Clean Binary           | NO                  |    1,074,987 |            84.18 |              91.96 |         2.7774 |
 
 ### Analisis Temuan
 1. **Efisiensi Latensi**: Shallow CNN Only/Hybrid (~550k) berjalan dalam sub-milidetik, jauh melampaui Proposed_1M yang lambat akibat konvolusi dilasi.
