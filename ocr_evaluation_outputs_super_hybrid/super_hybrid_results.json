@@ -1,0 +1,34 @@
+{
+  "SuperHybrid_Binary": {
+    "input_type": "Clean Binary",
+    "hybrid": "YES (12 feats)",
+    "params": 1168382,
+    "strict_accuracy": 1.5625,
+    "tolerant_accuracy": 1.5625,
+    "avg_latency_ms": 1.402855
+  },
+  "SuperHybrid_Gradient": {
+    "input_type": "Morphological Gradient",
+    "hybrid": "YES (12 feats)",
+    "params": 1168382,
+    "strict_accuracy": 0.0,
+    "tolerant_accuracy": 0.0,
+    "avg_latency_ms": 2.011194
+  },
+  "Gradient_CNN_Hybrid_Baseline": {
+    "input_type": "Morphological Gradient",
+    "hybrid": "YES (5 feats)",
+    "params": 556500,
+    "strict_accuracy": 0.0,
+    "tolerant_accuracy": 0.0,
+    "avg_latency_ms": 0.715712
+  },
+  "Proposed_1M_Raw_Baseline": {
+    "input_type": "Clean Binary",
+    "hybrid": "NO",
+    "params": 1074987,
+    "strict_accuracy": 0.0,
+    "tolerant_accuracy": 0.0,
+    "avg_latency_ms": 1.3023
+  }
+}
