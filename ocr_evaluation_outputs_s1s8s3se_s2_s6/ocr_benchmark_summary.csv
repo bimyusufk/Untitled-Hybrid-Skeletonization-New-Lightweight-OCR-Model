@@ -1,0 +1,2 @@
+model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
+hybrid_s1_s8_s3_se_s2_s6,Hybrid Skeleton S1+S8+S3+SE+S2+S6 (Distilled),1541,1275,100,166,82.7384815055159,89.22777417261518,2.0042436010000984,1.3006123303050607

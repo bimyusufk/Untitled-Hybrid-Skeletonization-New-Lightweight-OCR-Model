@@ -1,0 +1,2 @@
+model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
+hybrid_1m_s13,Hybrid Skeleton 1M (S13: CoordAttention),1541,1277,94,170,82.86826735885788,88.96820246593121,2.280901576999895,1.4801437878000616

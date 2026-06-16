@@ -1,0 +1,2 @@
+model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
+hybrid_scaled_1m,Hybrid Skeleton Scaled 1.0M (Backbone W24),1541,1276,97,168,82.8033744321869,89.0979883192732,1.8768820479999704,1.2179636911096499

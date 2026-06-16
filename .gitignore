@@ -41,5 +41,4 @@ datasets/*.npz
 *.zip
 *.tar
 
-# Evaluation outputs folders
-ocr_evaluation_outputs_*/
+

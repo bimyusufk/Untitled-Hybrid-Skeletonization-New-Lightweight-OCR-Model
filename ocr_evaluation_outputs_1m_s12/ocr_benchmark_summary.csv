@@ -1,0 +1,2 @@
+model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
+hybrid_1m_s12,Hybrid Skeleton 1M (S12: EffNet Teacher),1541,1282,93,166,83.19273199221286,89.22777417261518,2.3601016410000284,1.5315390272550475
