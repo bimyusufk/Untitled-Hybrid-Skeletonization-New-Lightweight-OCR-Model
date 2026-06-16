@@ -3,32 +3,32 @@
     "input_type": "Clean Binary",
     "hybrid": "YES (12 feats)",
     "params": 1168382,
-    "strict_accuracy": 1.5625,
-    "tolerant_accuracy": 1.5625,
-    "avg_latency_ms": 1.402855
+    "strict_accuracy": 85.214,
+    "tolerant_accuracy": 91.5694,
+    "avg_latency_ms": 0.194802
   },
   "SuperHybrid_Gradient": {
     "input_type": "Morphological Gradient",
     "hybrid": "YES (12 feats)",
     "params": 1168382,
-    "strict_accuracy": 0.0,
-    "tolerant_accuracy": 0.0,
-    "avg_latency_ms": 2.011194
+    "strict_accuracy": 85.9922,
+    "tolerant_accuracy": 92.4773,
+    "avg_latency_ms": 0.114075
   },
   "Gradient_CNN_Hybrid_Baseline": {
     "input_type": "Morphological Gradient",
     "hybrid": "YES (5 feats)",
     "params": 556500,
-    "strict_accuracy": 0.0,
-    "tolerant_accuracy": 0.0,
-    "avg_latency_ms": 0.715712
+    "strict_accuracy": 78.9883,
+    "tolerant_accuracy": 85.7328,
+    "avg_latency_ms": 0.231561
   },
   "Proposed_1M_Raw_Baseline": {
     "input_type": "Clean Binary",
     "hybrid": "NO",
     "params": 1074987,
-    "strict_accuracy": 0.0,
-    "tolerant_accuracy": 0.0,
-    "avg_latency_ms": 1.3023
+    "strict_accuracy": 84.3061,
+    "tolerant_accuracy": 91.1803,
+    "avg_latency_ms": 3.04194
   }
 }

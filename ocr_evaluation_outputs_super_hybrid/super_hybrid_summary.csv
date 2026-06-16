@@ -1,5 +1,5 @@
 Model,Input Type,Hybrid,Parameters,Strict Acc (%),Tolerant Acc (%),Latency (ms)
-SuperHybrid_Binary,Clean Binary,YES (12 feats),"1,168,382",1.56,1.56,1.4029
-SuperHybrid_Gradient,Morphological Gradient,YES (12 feats),"1,168,382",0.00,0.00,2.0112
-Gradient_CNN_Hybrid_Baseline,Morphological Gradient,YES (5 feats),"556,500",0.00,0.00,0.7157
-Proposed_1M_Raw_Baseline,Clean Binary,NO,"1,074,987",0.00,0.00,1.3023
+SuperHybrid_Binary,Clean Binary,YES (12 feats),"1,168,382",85.21,91.57,0.1948
+SuperHybrid_Gradient,Morphological Gradient,YES (12 feats),"1,168,382",85.99,92.48,0.1141
+Gradient_CNN_Hybrid_Baseline,Morphological Gradient,YES (5 feats),"556,500",78.99,85.73,0.2316
+Proposed_1M_Raw_Baseline,Clean Binary,NO,"1,074,987",84.31,91.18,3.0419
