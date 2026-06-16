@@ -1,0 +1,56 @@
+{
+  "ResNet18_Raw": {
+    "model_base": "ResNet18",
+    "input_type": "Raw",
+    "params": 11202046,
+    "strict_accuracy": 1.5625,
+    "tolerant_accuracy": 3.125,
+    "avg_latency_ms": 6.666061,
+    "paper_ref": "He et al., CVPR 2016"
+  },
+  "ResNet18_Skeleton": {
+    "model_base": "ResNet18",
+    "input_type": "Skeleton",
+    "params": 11202046,
+    "strict_accuracy": 4.6875,
+    "tolerant_accuracy": 6.25,
+    "avg_latency_ms": 5.916491,
+    "paper_ref": "He et al., CVPR 2016"
+  },
+  "MobileNetV3_Raw": {
+    "model_base": "MobileNetV3",
+    "input_type": "Raw",
+    "params": 4281166,
+    "strict_accuracy": 1.5625,
+    "tolerant_accuracy": 1.5625,
+    "avg_latency_ms": 3.028648,
+    "paper_ref": "Howard et al., ICCV 2019"
+  },
+  "MobileNetV3_Skeleton": {
+    "model_base": "MobileNetV3",
+    "input_type": "Skeleton",
+    "params": 4281166,
+    "strict_accuracy": 6.25,
+    "tolerant_accuracy": 6.25,
+    "avg_latency_ms": 4.87985,
+    "paper_ref": "Howard et al., ICCV 2019"
+  },
+  "Proposed_1M_Raw": {
+    "model_base": "Proposed_1M",
+    "input_type": "Raw",
+    "params": 1074987,
+    "strict_accuracy": 1.5625,
+    "tolerant_accuracy": 3.125,
+    "avg_latency_ms": 2.702722,
+    "paper_ref": "Custom (SE + Dilated Conv)"
+  },
+  "Proposed_1M_Skeleton": {
+    "model_base": "Proposed_1M",
+    "input_type": "Skeleton",
+    "params": 1074987,
+    "strict_accuracy": 6.25,
+    "tolerant_accuracy": 6.25,
+    "avg_latency_ms": 2.331486,
+    "paper_ref": "Custom (SE + Dilated Conv)"
+  }
+}

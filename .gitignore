@@ -41,4 +41,5 @@ datasets/*.npz
 *.zip
 *.tar
 
-
+# Model weights
+*.pth

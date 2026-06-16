@@ -1,0 +1,5 @@
+Model Name,Parameters,Strict Accuracy (%),Tolerant Accuracy (%),Avg Latency (ms)
+Proposed_1M,"1,074,987",1.56%,3.12%,1.5361 ms
+CNN_GRU,"5,717,694",0.00%,0.00%,13.1772 ms
+MobileNetV3_Small,"1,581,118",0.00%,0.00%,1.1299 ms
+MobileViT_XXS,"970,638",9.38%,9.38%,1.8070 ms

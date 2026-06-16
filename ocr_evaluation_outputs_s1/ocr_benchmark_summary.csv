@@ -1,0 +1,2 @@
+model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
+hybrid_skeleton_s1,Hybrid Skeleton + S1 Aug,1541,1219,106,216,79.1044776119403,85.98312783906555,0.40916710000601597,0.26552050616873196

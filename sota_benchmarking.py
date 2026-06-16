@@ -1,7 +1,25 @@
+"""
+=======================================================================
+BENCHMARKING TERKONTROL: KLASIFIKASI KARAKTER TERISOLASI UNTUK EDGE DEVICE
+=======================================================================
+
+Model yang dibenchmark (3x2 Matrix, Raw vs. Skeletonized):
+
+1. ResNet-18        (~11.2M) - Standar industri medium-weight SOTA.
+2. MobileNetV3-Large (~3.5M) - Standar industri edge/mobile SOTA.
+3. Proposed_1M       (~1.07M) - Arsitektur usulan kita: CNN + SE Blocks + Dilated Conv.
+
+Jalur Evaluasi Silang (Cross-Evaluation):
+- Jalur A: Dilatih dan diuji pada Gambar Mentah (Raw)
+- Jalur B: Dilatih dan diuji pada Gambar Skeletonized (Skeletonized)
+
+Protokol: Semua model dilatih dari scratch dengan optimizer, scheduler,
+          data split, dan resolusi input yang identik.
+=======================================================================
+"""
+
 import os
 import time
-import json
-import yaml
 import numpy as np
 import pandas as pd
 import cv2
@@ -9,16 +27,15 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-
 from sklearn.metrics import classification_report, confusion_matrix
 from tqdm import tqdm
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision.models as models
-import timm
 
 # =====================================================================
 # FASE 1: STANDARDISASI DATASET & LINGKUNGAN
@@ -28,6 +45,8 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(SEED)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 # Class mapping: Alphanumeric 62 kelas
 CLASS_LIST = (
@@ -42,43 +61,64 @@ IDX_TO_CHAR = {idx: char for idx, char in enumerate(CLASS_LIST)}
 # Resolusi masukan wajib
 IMAGE_SIZE = (64, 64)
 
-def load_standardized_dataset(csv_path="datasets/annotations.csv", skeleton_base_dir="datasets/skeletonize"):
-    print(f"Loading dataset from {csv_path} and skeletonized images from {skeleton_base_dir}...")
+def load_paired_dataset(csv_path="datasets/annotations.csv", raw_base_dir="datasets/raw", skeleton_base_dir="datasets/skeletonize"):
+    """
+    Memuat dataset berpasangan (Raw dan Skeletonized) secara bersamaan untuk memastikan
+    keselarasan indeks sampel 100% sempurna.
+    """
+    print(f"Loading paired dataset from {csv_path}...")
+    print(f"  Raw base dir: {raw_base_dir}")
+    print(f"  Skeleton base dir: {skeleton_base_dir}")
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"Annotation file not found at: {csv_path}")
         
     df = pd.read_csv(csv_path)
-    X_data = []
+    X_raw_data = []
+    X_skel_data = []
     y_data = []
     
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Reading images"):
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Reading paired images"):
         folder_name = row['Folder Name']
         label = str(row['Label'])
-        folder_path = os.path.join(skeleton_base_dir, folder_name)
         
-        if not os.path.exists(folder_path):
+        raw_folder = os.path.join(raw_base_dir, folder_name)
+        skel_folder = os.path.join(skeleton_base_dir, folder_name)
+        
+        if not os.path.exists(raw_folder) or not os.path.exists(skel_folder):
             continue
             
-        for img_name in os.listdir(folder_path):
+        raw_files = set(os.listdir(raw_folder))
+        skel_files = set(os.listdir(skel_folder))
+        common_files = sorted(list(raw_files.intersection(skel_files)))
+        
+        for img_name in common_files:
             if img_name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                img_path = os.path.join(folder_path, img_name)
-                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-                if img is not None:
-                    # Resize to (64, 64)
-                    if img.shape[:2] != IMAGE_SIZE:
-                        img = cv2.resize(img, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
-                    
+                raw_path = os.path.join(raw_folder, img_name)
+                skel_path = os.path.join(skel_folder, img_name)
+                
+                img_raw = cv2.imread(raw_path, cv2.IMREAD_GRAYSCALE)
+                img_skel = cv2.imread(skel_path, cv2.IMREAD_GRAYSCALE)
+                
+                if img_raw is not None and img_skel is not None:
+                    if img_raw.shape[:2] != IMAGE_SIZE:
+                        img_raw = cv2.resize(img_raw, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
+                    if img_skel.shape[:2] != IMAGE_SIZE:
+                        img_skel = cv2.resize(img_skel, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
+                        
                     # Normalisasi: mean=[0.5], std=[0.5] -> memetakan [0, 255] ke [-1.0, 1.0]
-                    img_normalized = (img.astype(np.float32) / 255.0 - 0.5) / 0.5
+                    img_raw_normalized = (img_raw.astype(np.float32) / 255.0 - 0.5) / 0.5
+                    img_skel_normalized = (img_skel.astype(np.float32) / 255.0 - 0.5) / 0.5
                     
-                    X_data.append(img_normalized)
+                    X_raw_data.append(img_raw_normalized)
+                    X_skel_data.append(img_skel_normalized)
                     y_data.append(CHAR_TO_IDX[label])
                     
-    X = np.expand_dims(np.array(X_data), axis=1) # C=1 (Grayscale) -> shape [N, 1, 64, 64]
+    X_raw = np.expand_dims(np.array(X_raw_data), axis=1)  # C=1 (Grayscale) -> shape [N, 1, 64, 64]
+    X_skel = np.expand_dims(np.array(X_skel_data), axis=1) # C=1 (Grayscale) -> shape [N, 1, 64, 64]
     y = np.array(y_data)
     
-    print(f"Dataset loaded: {X.shape[0]} samples across {NUM_CLASSES} classes.")
-    return X, y
+    print(f"Paired dataset loaded: {X_raw.shape[0]} samples across {NUM_CLASSES} classes.")
+    return X_raw, X_skel, y
 
 class StandardDataset(Dataset):
     def __init__(self, X, y):
@@ -91,12 +131,14 @@ class StandardDataset(Dataset):
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
 
+
 # =====================================================================
-# FASE 2: INSTANSIASI & MODIFIKASI ARSITEKTUR MODEL SOTA
+# FASE 2: DEFINISI ARSITEKTUR MODEL
 # =====================================================================
 
-# --- MODEL 1: MODEL USULAN (Baseline 1M Model) ---
+# --- MODEL 1: MODEL USULAN (Proposed ~1M Model) ---
 class SEBlock(nn.Module):
+    """Squeeze-and-Excitation Block (Hu et al., 2018)"""
     def __init__(self, channels, ratio=8):
         super().__init__()
         self.fc = nn.Sequential(
@@ -114,9 +156,13 @@ class SEBlock(nn.Module):
         return x * scale
 
 class Proposed1MModel(nn.Module):
+    """
+    Model arsitektur usulan (~1.07M parameter).
+    CNN dengan SE Blocks + Dilated Convolutions + Strided Downsampling.
+    """
     def __init__(self, num_classes=62, in_channels=1):
         super().__init__()
-        # Block 1
+        # Block 1: 64x64 -> 32x32
         self.conv1 = nn.Conv2d(in_channels, 24, kernel_size=3, padding=2, dilation=2)
         self.bn1 = nn.BatchNorm2d(24)
         self.conv2 = nn.Conv2d(24, 24, kernel_size=3, stride=2, padding=1)
@@ -124,7 +170,7 @@ class Proposed1MModel(nn.Module):
         self.se1 = SEBlock(24)
         self.drop1 = nn.Dropout(0.2)
 
-        # Block 2
+        # Block 2: 32x32 -> 16x16
         self.conv3 = nn.Conv2d(24, 48, kernel_size=3, padding=2, dilation=2)
         self.bn3 = nn.BatchNorm2d(48)
         self.conv4 = nn.Conv2d(48, 48, kernel_size=3, stride=2, padding=1)
@@ -132,7 +178,7 @@ class Proposed1MModel(nn.Module):
         self.se2 = SEBlock(48)
         self.drop2 = nn.Dropout(0.2)
 
-        # Block 3
+        # Block 3: 16x16 -> 8x8
         self.conv5 = nn.Conv2d(48, 96, kernel_size=3, padding=2, dilation=2)
         self.bn5 = nn.BatchNorm2d(96)
         self.conv6 = nn.Conv2d(96, 96, kernel_size=3, stride=2, padding=1)
@@ -140,7 +186,7 @@ class Proposed1MModel(nn.Module):
         self.se3 = SEBlock(96)
         self.drop3 = nn.Dropout(0.3)
 
-        # Block 4
+        # Block 4: 8x8 -> 4x4
         self.conv7 = nn.Conv2d(96, 192, kernel_size=3, padding=2, dilation=2)
         self.bn7 = nn.BatchNorm2d(192)
         self.conv8 = nn.Conv2d(192, 192, kernel_size=3, stride=2, padding=1)
@@ -158,29 +204,21 @@ class Proposed1MModel(nn.Module):
         self.fc2 = nn.Linear(128, num_classes)
 
     def forward(self, x):
-        # Block 1
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.relu(self.bn2(self.conv2(x)))
-        x = self.se1(x)
-        x = self.drop1(x)
+        x = self.se1(x); x = self.drop1(x)
 
-        # Block 2
         x = self.relu(self.bn3(self.conv3(x)))
         x = self.relu(self.bn4(self.conv4(x)))
-        x = self.se2(x)
-        x = self.drop2(x)
+        x = self.se2(x); x = self.drop2(x)
 
-        # Block 3
         x = self.relu(self.bn5(self.conv5(x)))
         x = self.relu(self.bn6(self.conv6(x)))
-        x = self.se3(x)
-        x = self.drop3(x)
+        x = self.se3(x); x = self.drop3(x)
 
-        # Block 4
         x = self.relu(self.bn7(self.conv7(x)))
         x = self.relu(self.bn8(self.conv8(x)))
-        x = self.se4(x)
-        x = self.drop4(x)
+        x = self.se4(x); x = self.drop4(x)
 
         x = self.flatten(x)
         x = self.relu(self.bn9(self.fc1(x)))
@@ -188,109 +226,72 @@ class Proposed1MModel(nn.Module):
         x = self.fc2(x)
         return x
 
-# --- MODEL 2: HIBRIDA CNN-GRU (CRNN-style) ---
-class CNNGRUModel(nn.Module):
-    def __init__(self, num_classes=62, in_channels=1, gru_hidden_size=256):
-        super().__init__()
-        # VGG-style Feature Extractor
-        self.features = nn.Sequential(
-            # Block 1: 64x64 -> 32x32
-            nn.Conv2d(in_channels, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-            
-            # Block 2: 32x32 -> 16x16
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-            
-            # Block 3: 16x16 -> 8x8
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-            
-            # Block 4: 8x8 -> 4x4
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2)
-        )
-        
-        # Sequence processing: Collapsing height to 1 (Average pooling along height)
-        # Spatial dimensions at this point: 512 channels, 4x4 spatial size.
-        # pooling height -> seq_len = 4, hidden_dim = 512
-        self.gru = nn.GRU(
-            input_size=512, 
-            hidden_size=gru_hidden_size, 
-            num_layers=1, 
-            bidirectional=True, 
-            batch_first=True
-        )
-        
-        # BiGRU output is size gru_hidden_size * 2 = 512
-        # Classifier
-        self.fc = nn.Linear(gru_hidden_size * 2, num_classes)
-        
-    def forward(self, x):
-        # 1. Feature extraction
-        features = self.features(x) # shape [B, 512, 4, 4]
-        
-        # 2. Reshape to sequence (pool height, transpose to seq: [B, W, C])
-        seq = torch.mean(features, dim=2) # average pooling along height -> shape [B, 512, 4]
-        seq = seq.permute(0, 2, 1) # transpose to [B, 4, 512]
-        
-        # 3. GRU Layer
-        out, _ = self.gru(seq) # out shape [B, 4, 512]
-        
-        # 4. Ambil hidden state terakhir dari fitur GRU
-        last_timestep = out[:, -1, :] # shape [B, 512]
-        
-        # 5. Linear classifier head
-        logits = self.fc(last_timestep)
-        return logits
 
-# --- MODEL 3: LIGHTWEIGHT CNN (MobileNetV3-Small) ---
-def build_mobilenetv3_small(num_classes=62, in_channels=1):
-    model = models.mobilenet_v3_small(weights=None)
-    # Ubah conv pertama agar menerima 1 channel
+# --- MODEL 2: ResNet-18 (Standar Industri Medium-weight) ---
+def build_resnet18(num_classes=62, in_channels=1):
+    """
+    ResNet-18 (~11.2M parameter).
+    Modifikasi: conv pertama grayscale, FC head 62 kelas.
+    """
+    model = models.resnet18(weights=None)
+    model.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
+    return model
+
+
+# --- MODEL 3: MobileNetV3-Large (Standar Industri Edge/Mobile) ---
+def build_mobilenet_v3_large(num_classes=62, in_channels=1):
+    """
+    MobileNetV3-Large (~3.5M parameter).
+    Modifikasi: conv pertama grayscale, classifier head 62 kelas.
+    """
+    model = models.mobilenet_v3_large(weights=None)
+    # Ubah conv pertama: 3 channel RGB -> 1 channel Grayscale
     model.features[0][0] = nn.Conv2d(in_channels, 16, kernel_size=3, stride=2, padding=1, bias=False)
-    # Modifikasi fully connected classification head menjadi Linear(in_features=1024, out_features=62)
-    model.classifier[3] = nn.Linear(1024, num_classes)
+    # Ubah classifier head: 960 -> 1280 -> 62 kelas
+    model.classifier[3] = nn.Linear(model.classifier[3].in_features, num_classes)
     return model
 
-# --- MODEL 4: MOBILEVIT-XXS (Transformer) ---
-def build_mobilevit_xxs(num_classes=62, in_channels=1):
-    # Model instansiasi via timm (timm menangani in_chans=1 & num_classes=62 otomatis)
-    # Patch size diatur default timm untuk mobilevit_xxs
-    model = timm.create_model(
-        'mobilevit_xxs', 
-        pretrained=False, 
-        num_classes=num_classes, 
-        in_chans=in_channels
-    )
-    return model
 
-# Helper to count model parameters
+# =====================================================================
+# UTILITAS
+# =====================================================================
+
 def count_parameters(model):
+    """Hitung total trainable parameters."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+def verify_model_forward(model, model_name, device, in_channels=1):
+    """Verifikasi bahwa forward pass berhasil dan dimensi output benar."""
+    model = model.to(device)
+    model.eval()
+    dummy = torch.randn(2, in_channels, 64, 64).to(device)
+    with torch.no_grad():
+        out = model(dummy)
+    assert out.shape == (2, NUM_CLASSES), \
+        f"{model_name}: Expected output (2, {NUM_CLASSES}), got {out.shape}"
+    print(f"  [OK] {model_name}: forward pass OK, output shape {out.shape}")
+    return True
+
 
 # =====================================================================
 # FASE 3: PROTOKOL PELATIHAN TERKONTROL (CONTROLLED TRAINING)
 # =====================================================================
+
 def train_model(model, train_loader, val_loader, epochs, device, model_name, patience=10):
-    print(f"\n--- Training Model: {model_name} ({count_parameters(model):,} parameters) ---")
+    """
+    Melatih model dengan protokol standar:
+      - Optimizer: AdamW (lr=1e-3, weight_decay=1e-2)
+      - Scheduler: CosineAnnealingLR
+      - Loss: CrossEntropyLoss
+      - Early stopping berdasarkan validation loss
+    """
+    params = count_parameters(model)
+    print(f"\n{'='*60}")
+    print(f"  Training: {model_name} ({params:,} parameters)")
+    print(f"{'='*60}")
     model = model.to(device)
     
-    # Optimizer & Scheduler
     optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-2)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     criterion = nn.CrossEntropyLoss()
@@ -305,7 +306,7 @@ def train_model(model, train_loader, val_loader, epochs, device, model_name, pat
     }
     
     for epoch in range(1, epochs + 1):
-        # Training Phase
+        # --- Training Phase ---
         model.train()
         running_loss = 0.0
         correct_train = 0
@@ -330,7 +331,7 @@ def train_model(model, train_loader, val_loader, epochs, device, model_name, pat
         epoch_loss = running_loss / total_train
         epoch_acc = (correct_train / total_train) * 100
         
-        # Validation Phase
+        # --- Validation Phase ---
         model.eval()
         val_running_loss = 0.0
         correct_val = 0
@@ -355,19 +356,19 @@ def train_model(model, train_loader, val_loader, epochs, device, model_name, pat
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
         
-        print(f"Epoch [{epoch}/{epochs}] - "
+        print(f"  Epoch [{epoch:3d}/{epochs}] - "
               f"Loss: {epoch_loss:.4f} | Acc: {epoch_acc:.2f}% | "
               f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.2f}%")
               
-        # Early Stopping check
+        # Early Stopping
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            best_model_state = model.state_dict().copy()
+            best_model_state = {k: v.clone() for k, v in model.state_dict().items()}
             patience_counter = 0
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print(f"Early stopping triggered at epoch {epoch}. Restoring best weights...")
+                print(f"  [WARNING] Early stopping triggered at epoch {epoch}. Restoring best weights.")
                 model.load_state_dict(best_model_state)
                 break
                 
@@ -376,22 +377,25 @@ def train_model(model, train_loader, val_loader, epochs, device, model_name, pat
         
     return history
 
+
 # =====================================================================
-# EVALUASI & EXPORT METRIK
+# FASE 4: EVALUASI & EXPORT METRIK
 # =====================================================================
-def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evaluation_outputs_breakthrough"):
-    print(f"\n--- Evaluating Model: {model_name} ---")
+
+def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evaluation_outputs_benchmark"):
+    """Evaluasi model: strict/tolerant accuracy, latensi, classification report, confusion matrix."""
+    print(f"\n--- Evaluating: {model_name} ---")
     os.makedirs(output_dir, exist_ok=True)
     model = model.to(device)
     model.eval()
     
-    # 1. Warm-up (10 runs)
+    # Warm-up (10 runs)
     dummy_input = torch.randn(1, 1, 64, 64).to(device)
     with torch.no_grad():
         for _ in range(10):
             _ = model(dummy_input)
-            
-    # 2. Run Inference Latency Benchmark & gather predictions
+    
+    # Inference + latency measurement
     all_preds = []
     all_targets = []
     total_time = 0.0
@@ -400,10 +404,10 @@ def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evalu
         for images, labels in test_loader:
             images = images.to(device)
             
-            # Start timer for latency batch-wise or element-wise (element-wise is more accurate)
-            # We measure batch time and average it per image
             t_start = time.perf_counter()
             outputs = model(images)
+            if device.type == "cuda":
+                torch.cuda.synchronize()
             t_end = time.perf_counter()
             total_time += (t_end - t_start)
             
@@ -411,11 +415,10 @@ def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evalu
             all_preds.extend(predicted.cpu().numpy())
             all_targets.extend(labels.numpy())
             
-    # Hitung accuracy
     y_true = np.array(all_targets)
     y_pred = np.array(all_preds)
     
-    # Class names from classes
+    # Konversi ke karakter untuk metrik tolerant
     y_true_chars = [IDX_TO_CHAR[idx] for idx in y_true]
     y_pred_chars = [IDX_TO_CHAR[idx] for idx in y_pred]
     
@@ -433,11 +436,11 @@ def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evalu
     tolerant_accuracy = ((strict_correct + case_error_but_char_correct) / total_samples) * 100
     avg_latency_ms = (total_time / total_samples) * 1000
     
-    print(f"Strict Accuracy: {strict_accuracy:.2f}%")
-    print(f"Tolerant Accuracy: {tolerant_accuracy:.2f}%")
-    print(f"Average Latency: {avg_latency_ms:.4f} ms/image")
+    print(f"  Strict Accuracy:  {strict_accuracy:.2f}%")
+    print(f"  Tolerant Accuracy: {tolerant_accuracy:.2f}%")
+    print(f"  Avg Latency:      {avg_latency_ms:.4f} ms/image")
     
-    # 3. Save classification report
+    # Classification Report
     report_text = classification_report(
         y_true, y_pred, 
         target_names=CLASS_LIST, 
@@ -446,20 +449,21 @@ def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evalu
     )
     report_path = os.path.join(output_dir, f"classification_report_{model_name}.txt")
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write(f"Model SOTA Benchmark: {model_name}\n")
+        f.write(f"Model: {model_name}\n")
+        f.write(f"Parameters: {count_parameters(model):,}\n")
         f.write(f"Strict Accuracy: {strict_accuracy:.2f}%\n")
         f.write(f"Tolerant Accuracy: {tolerant_accuracy:.2f}%\n")
         f.write(f"Average Latency: {avg_latency_ms:.4f} ms/image\n\n")
         f.write(report_text)
         
-    # 4. Save confusion matrix plot
+    # Confusion Matrix
     cm = confusion_matrix(y_true, y_pred, labels=list(range(NUM_CLASSES)))
     plt.figure(figsize=(15, 15))
     cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    cm_norm = np.nan_to_num(cm_norm) # handle div by zero
+    cm_norm = np.nan_to_num(cm_norm)
     
     plt.imshow(cm_norm, interpolation="nearest", cmap=plt.cm.Blues)
-    plt.title(f"Confusion Matrix: {model_name}")
+    plt.title(f"Confusion Matrix: {model_name}", fontsize=14)
     plt.colorbar(fraction=0.046, pad=0.04)
     tick_marks = np.arange(NUM_CLASSES)
     plt.xticks(tick_marks, CLASS_LIST, rotation=90, fontsize=6)
@@ -467,34 +471,35 @@ def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evalu
     plt.xlabel("Predicted Label")
     plt.ylabel("True Label")
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, f"confusion_matrix_{model_name}.png"), dpi=180, bbox_inches="tight")
+    plt.savefig(os.path.join(output_dir, f"confusion_matrix_{model_name}.png"), 
+                dpi=180, bbox_inches="tight")
     plt.close()
     
-    # 5. Save prediction samples plot (max 12 samples)
+    # Prediction Samples
     sample_count = min(12, total_samples)
     cols = 4
     rows = int(np.ceil(sample_count / cols))
     plt.figure(figsize=(12, rows * 3))
     
-    # We need to extract the raw test images (de-normalized back to 0-255 grayscale)
     for idx in range(sample_count):
         ax = plt.subplot(rows, cols, idx + 1)
-        # self.X has shape [N, 1, 64, 64] with normalization (x - 0.5) / 0.5
-        # we reverse it to display: x * 0.5 + 0.5
         test_img = test_loader.dataset.X[idx].squeeze().numpy()
         test_img_orig = (test_img * 0.5 + 0.5) * 255.0
         test_img_orig = np.clip(test_img_orig, 0, 255).astype(np.uint8)
         
+        color = "green" if y_true_chars[idx] == y_pred_chars[idx] else "red"
         ax.imshow(test_img_orig, cmap="gray")
-        ax.set_title(f"T: {y_true_chars[idx]} | P: {y_pred_chars[idx]}", fontsize=8)
+        ax.set_title(f"T:{y_true_chars[idx]} | P:{y_pred_chars[idx]}", 
+                     fontsize=9, color=color, fontweight="bold")
         ax.axis("off")
         
     plt.suptitle(f"Sample Predictions: {model_name}", y=1.02, fontsize=12)
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, f"prediction_samples_{model_name}.png"), dpi=180, bbox_inches="tight")
+    plt.savefig(os.path.join(output_dir, f"prediction_samples_{model_name}.png"), 
+                dpi=180, bbox_inches="tight")
     plt.close()
     
-    # 6. Save model weights
+    # Save model weights
     torch.save(model.state_dict(), os.path.join(output_dir, f"{model_name}.pth"))
     
     return {
@@ -504,155 +509,251 @@ def evaluate_model(model, test_loader, device, model_name, output_dir="ocr_evalu
         "params": count_parameters(model)
     }
 
+
 # =====================================================================
 # MAIN RUNNER
 # =====================================================================
+
 def main():
-    print("=== STARTING CONTROLLED SOTA BENCHMARKING (PyTorch) ===")
+    print("=" * 70)
+    print("  BENCHMARKING TERKONTROL: KLASIFIKASI KARAKTER UNTUK EDGE DEVICE")
+    print("  Model: ResNet-18 | MobileNetV3-Large | Proposed_1M")
+    print("  Tipe Input: Raw vs. Skeletonized (3x2 Matrix)")
+    print("=" * 70)
     
-    # Check device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using execution device: {device}")
+    print(f"\nDevice: {device}")
+    if device.type == "cuda":
+        print(f"GPU: {torch.cuda.get_device_name(0)}")
     
-    # Load dataset
+    # --- Load Paired Dataset ---
     try:
-        X, y = load_standardized_dataset()
+        X_raw, X_skel, y = load_paired_dataset()
     except Exception as e:
-        print(f"Error loading dataset: {e}")
-        print("Creating mock dataset for verification / dry-run...")
-        # Mock dataset of 100 samples
-        X = np.random.randn(100, 1, 64, 64).astype(np.float32)
-        y = np.random.randint(0, NUM_CLASSES, size=(100,))
-        
-    # Split: 80% train, 10% val, 10% test
-    # First: split 80% train, 20% temp
-    X_train, X_temp, y_train, y_temp = train_test_split(
-        X, y, test_size=0.20, random_state=SEED, stratify=y
+        print(f"Error loading paired dataset: {e}")
+        print("Creating mock dataset for dry-run verification...")
+        X_raw = np.random.randn(200, 1, 64, 64).astype(np.float32)
+        X_skel = np.random.randn(200, 1, 64, 64).astype(np.float32)
+        y = np.random.randint(0, NUM_CLASSES, size=(200,))
+    
+    # --- Data Split berbasis Indeks ---
+    indices = np.arange(len(y))
+    train_idx, temp_idx = train_test_split(
+        indices, test_size=0.20, random_state=SEED, stratify=y
     )
-    # Second: split 20% temp equally to val and test (each 10% of total)
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.50, random_state=SEED, stratify=y_temp
+    val_idx, test_idx = train_test_split(
+        temp_idx, test_size=0.50, random_state=SEED, stratify=y[temp_idx]
     )
     
-    print(f"Split sizes -> Train: {X_train.shape[0]} | Val: {X_val.shape[0]} | Test: {X_test.shape[0]}")
+    # Split Raw Dataset
+    X_train_raw, y_train_raw = X_raw[train_idx], y[train_idx]
+    X_val_raw, y_val_raw = X_raw[val_idx], y[val_idx]
+    X_test_raw, y_test_raw = X_raw[test_idx], y[test_idx]
     
-    # Dataloaders
-    train_dataset = StandardDataset(X_train, y_train)
-    val_dataset = StandardDataset(X_val, y_val)
-    test_dataset = StandardDataset(X_test, y_test)
+    # Split Skeletonized Dataset
+    X_train_skel, y_train_skel = X_skel[train_idx], y[train_idx]
+    X_val_skel, y_val_skel = X_skel[val_idx], y[val_idx]
+    X_test_skel, y_test_skel = X_skel[test_idx], y[test_idx]
     
+    print(f"\nData Split (Identik Raw & Skeletonized):")
+    print(f"  Train: {X_train_raw.shape[0]} | Val: {X_val_raw.shape[0]} | Test: {X_test_raw.shape[0]}")
+    
+    # --- Dataloaders ---
     batch_size = 64
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
-    # Instansiasi Model
-    models_dict = {
-        "Proposed_1M": Proposed1MModel(num_classes=NUM_CLASSES),
-        "CNN_GRU": CNNGRUModel(num_classes=NUM_CLASSES),
-        "MobileNetV3_Small": build_mobilenetv3_small(num_classes=NUM_CLASSES),
-        "MobileViT_XXS": build_mobilevit_xxs(num_classes=NUM_CLASSES)
-    }
+    # Raw Loaders
+    train_loader_raw = DataLoader(StandardDataset(X_train_raw, y_train_raw), batch_size=batch_size, shuffle=True, 
+                                 num_workers=0, pin_memory=(device.type == "cuda"))
+    val_loader_raw = DataLoader(StandardDataset(X_val_raw, y_val_raw), batch_size=batch_size, shuffle=False,
+                               num_workers=0, pin_memory=(device.type == "cuda"))
+    test_loader_raw = DataLoader(StandardDataset(X_test_raw, y_test_raw), batch_size=batch_size, shuffle=False,
+                                num_workers=0, pin_memory=(device.type == "cuda"))
+
+    # Skeletonized Loaders
+    train_loader_skel = DataLoader(StandardDataset(X_train_skel, y_train_skel), batch_size=batch_size, shuffle=True, 
+                                  num_workers=0, pin_memory=(device.type == "cuda"))
+    val_loader_skel = DataLoader(StandardDataset(X_val_skel, y_val_skel), batch_size=batch_size, shuffle=False,
+                                num_workers=0, pin_memory=(device.type == "cuda"))
+    test_loader_skel = DataLoader(StandardDataset(X_test_skel, y_test_skel), batch_size=batch_size, shuffle=False,
+                                 num_workers=0, pin_memory=(device.type == "cuda"))
     
-    # Configuration
-    epochs = int(os.getenv("OCR_EPOCHS", "30"))
+    # --- Konfigurasi 3x2 Matrix (Format: Name, Instantiation Lambda, Input Type, loaders) ---
+    configs = [
+        ("ResNet18_Raw", lambda: build_resnet18(NUM_CLASSES), "Raw", train_loader_raw, val_loader_raw, test_loader_raw),
+        ("ResNet18_Skeleton", lambda: build_resnet18(NUM_CLASSES), "Skeleton", train_loader_skel, val_loader_skel, test_loader_skel),
+        ("MobileNetV3_Raw", lambda: build_mobilenet_v3_large(NUM_CLASSES), "Raw", train_loader_raw, val_loader_raw, test_loader_raw),
+        ("MobileNetV3_Skeleton", lambda: build_mobilenet_v3_large(NUM_CLASSES), "Skeleton", train_loader_skel, val_loader_skel, test_loader_skel),
+        ("Proposed_1M_Raw", lambda: Proposed1MModel(num_classes=NUM_CLASSES), "Raw", train_loader_raw, val_loader_raw, test_loader_raw),
+        ("Proposed_1M_Skeleton", lambda: Proposed1MModel(num_classes=NUM_CLASSES), "Skeleton", train_loader_skel, val_loader_skel, test_loader_skel),
+    ]
+    
+    epochs = int(os.getenv("OCR_EPOCHS", "50"))
     patience = 10
+    output_dir = "ocr_evaluation_outputs_benchmark"
     
-    # Jika run locally / dry-run
+    # DRY RUN mode
     if os.getenv("DRY_RUN", "False").lower() == "true":
-        print("[DRY RUN ACTIVE] Restricting to 2 epochs and minimal subsets for quick validation.")
+        print("\n[DRY RUN] Restricting to 2 epochs with mini subsets.")
         epochs = 2
         patience = 2
-        # Slice datasets
-        train_loader = DataLoader(StandardDataset(X_train[:128], y_train[:128]), batch_size=32, shuffle=True)
-        val_loader = DataLoader(StandardDataset(X_val[:64], y_val[:64]), batch_size=32, shuffle=False)
-        test_loader = DataLoader(StandardDataset(X_test[:64], y_test[:64]), batch_size=32, shuffle=False)
         
+        # Mini loaders Raw
+        train_loader_raw = DataLoader(StandardDataset(X_train_raw[:128], y_train_raw[:128]), batch_size=32, shuffle=True)
+        val_loader_raw = DataLoader(StandardDataset(X_val_raw[:64], y_val_raw[:64]), batch_size=32, shuffle=False)
+        test_loader_raw = DataLoader(StandardDataset(X_test_raw[:64], y_test_raw[:64]), batch_size=32, shuffle=False)
+
+        # Mini loaders Skeletonized
+        train_loader_skel = DataLoader(StandardDataset(X_train_skel[:128], y_train_skel[:128]), batch_size=32, shuffle=True)
+        val_loader_skel = DataLoader(StandardDataset(X_val_skel[:64], y_val_skel[:64]), batch_size=32, shuffle=False)
+        test_loader_skel = DataLoader(StandardDataset(X_test_skel[:64], y_test_skel[:64]), batch_size=32, shuffle=False)
+        
+        # Override configs with mini loaders
+        configs = [
+            ("ResNet18_Raw", lambda: build_resnet18(NUM_CLASSES), "Raw", train_loader_raw, val_loader_raw, test_loader_raw),
+            ("ResNet18_Skeleton", lambda: build_resnet18(NUM_CLASSES), "Skeleton", train_loader_skel, val_loader_skel, test_loader_skel),
+            ("MobileNetV3_Raw", lambda: build_mobilenet_v3_large(NUM_CLASSES), "Raw", train_loader_raw, val_loader_raw, test_loader_raw),
+            ("MobileNetV3_Skeleton", lambda: build_mobilenet_v3_large(NUM_CLASSES), "Skeleton", train_loader_skel, val_loader_skel, test_loader_skel),
+            ("Proposed_1M_Raw", lambda: Proposed1MModel(num_classes=NUM_CLASSES), "Raw", train_loader_raw, val_loader_raw, test_loader_raw),
+            ("Proposed_1M_Skeleton", lambda: Proposed1MModel(num_classes=NUM_CLASSES), "Skeleton", train_loader_skel, val_loader_skel, test_loader_skel),
+        ]
+    
+    # --- Training & Evaluation Loop ---
     results = {}
     
-    for model_name, model in models_dict.items():
+    for config_name, model_fn, input_type, train_ldr, val_ldr, test_ldr in configs:
+        model = model_fn()
+        params = count_parameters(model)
+        
+        print(f"\n[Verifikasi] Model: {config_name}")
+        verify_model_forward(model, config_name, device)
+        print(f"  Trainable params: {params:,}")
+        
         # Train
         history = train_model(
             model=model,
-            train_loader=train_loader,
-            val_loader=val_loader,
+            train_loader=train_ldr,
+            val_loader=val_ldr,
             epochs=epochs,
             device=device,
-            model_name=model_name,
+            model_name=config_name,
             patience=patience
         )
         
-        # Save training curves
-        plt.figure(figsize=(12, 5))
-        plt.subplot(1, 2, 1)
-        plt.plot(history["train_loss"], label="Train Loss")
-        plt.plot(history["val_loss"], label="Val Loss")
-        plt.title(f"Loss Curves: {model_name}")
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        # Plot training curves
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
         
-        plt.subplot(1, 2, 2)
-        plt.plot(history["train_acc"], label="Train Acc")
-        plt.plot(history["val_acc"], label="Val Acc")
-        plt.title(f"Accuracy Curves: {model_name}")
-        plt.xlabel("Epoch")
-        plt.ylabel("Accuracy (%)")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        axes[0].plot(history["train_loss"], label="Train Loss", linewidth=2)
+        axes[0].plot(history["val_loss"], label="Val Loss", linewidth=2)
+        axes[0].set_title(f"Loss: {config_name}", fontsize=12, fontweight="bold")
+        axes[0].set_xlabel("Epoch")
+        axes[0].set_ylabel("Loss")
+        axes[0].legend()
+        axes[0].grid(True, alpha=0.3)
+        
+        axes[1].plot(history["train_acc"], label="Train Acc", linewidth=2)
+        axes[1].plot(history["val_acc"], label="Val Acc", linewidth=2)
+        axes[1].set_title(f"Accuracy: {config_name}", fontsize=12, fontweight="bold")
+        axes[1].set_xlabel("Epoch")
+        axes[1].set_ylabel("Accuracy (%)")
+        axes[1].legend()
+        axes[1].grid(True, alpha=0.3)
         
         plt.tight_layout()
-        os.makedirs("ocr_evaluation_outputs_breakthrough", exist_ok=True)
-        plt.savefig(f"ocr_evaluation_outputs_breakthrough/training_curves_{model_name}.png", dpi=160, bbox_inches="tight")
+        os.makedirs(output_dir, exist_ok=True)
+        plt.savefig(os.path.join(output_dir, f"training_curves_{config_name}.png"), 
+                    dpi=160, bbox_inches="tight")
         plt.close()
         
         # Evaluate
         eval_metrics = evaluate_model(
             model=model,
-            test_loader=test_loader,
+            test_loader=test_ldr,
             device=device,
-            model_name=model_name
+            model_name=config_name,
+            output_dir=output_dir
         )
+        eval_metrics["input_type"] = input_type
         
-        results[model_name] = eval_metrics
-        
+        results[config_name] = eval_metrics
+    
     # =====================================================================
-    # TABEL KOMPARASI & RINGKASAN
+    # TABEL KOMPARASI FINAL
     # =====================================================================
-    print("\n\n" + "="*70)
-    print("                 FINAL SOTA BENCHMARKING SUMMARY")
-    print("="*70)
+    print(f"\n\n{'='*85}")
+    print("                       HASIL BENCHMARK TERKONTROL (3x2 MATRIX)")
+    print(f"{'='*85}")
+    
+    paper_refs = {
+        "ResNet18_Raw": "He et al., CVPR 2016",
+        "ResNet18_Skeleton": "He et al., CVPR 2016",
+        "MobileNetV3_Raw": "Howard et al., ICCV 2019",
+        "MobileNetV3_Skeleton": "Howard et al., ICCV 2019",
+        "Proposed_1M_Raw": "Custom (SE + Dilated Conv)",
+        "Proposed_1M_Skeleton": "Custom (SE + Dilated Conv)",
+    }
     
     summary_data = []
     for m_name, res in results.items():
         summary_data.append({
-            "Model Name": m_name,
+            "Model": m_name.replace("_Raw", "").replace("_Skeleton", ""),
+            "Input Type": res["input_type"],
+            "Referensi": paper_refs.get(m_name, ""),
             "Parameters": f"{res['params']:,}",
-            "Strict Accuracy (%)": f"{res['strict_accuracy']:.2f}%",
-            "Tolerant Accuracy (%)": f"{res['tolerant_accuracy']:.2f}%",
-            "Avg Latency (ms)": f"{res['avg_latency_ms']:.4f} ms"
+            "Strict Acc (%)": f"{res['strict_accuracy']:.2f}",
+            "Tolerant Acc (%)": f"{res['tolerant_accuracy']:.2f}",
+            "Latency (ms)": f"{res['avg_latency_ms']:.4f}"
         })
         
     summary_df = pd.DataFrame(summary_data)
     print(summary_df.to_string(index=False))
     
-    # Save CSV report
-    summary_df.to_csv("ocr_evaluation_outputs_breakthrough/sota_benchmark_summary.csv", index=False)
+    # Save CSV
+    summary_df.to_csv(os.path.join(output_dir, "benchmark_summary.csv"), index=False)
     
-    # Save markdown summary
-    report_md_path = "ocr_evaluation_outputs_breakthrough/sota_benchmark_report.md"
+    # Save Markdown Report
+    report_md_path = os.path.join(output_dir, "benchmark_report.md")
     with open(report_md_path, "w", encoding="utf-8") as f:
-        f.write("# Laporan Benchmarking Terkontrol dengan Model SOTA\n\n")
-        f.write("Berikut adalah hasil perbandingan performa model usulan (Proposed 1M) dengan model SOTA under the exact same dataset splits, optimizer, and scheduler:\n\n")
+        f.write("# Laporan Benchmarking Terkontrol (Matriks 3x2)\n")
+        f.write("## Klasifikasi Karakter Terisolasi untuk Edge Device (Raw vs. Skeletonized)\n\n")
+        f.write("### Protokol Eksperimen\n")
+        f.write("- **Dataset**: Chars74K Paired (Raw & Skeletonized, 64x64, Grayscale)\n")
+        f.write(f"- **Split**: Train {X_train_raw.shape[0]} | Val {X_val_raw.shape[0]} | Test {X_test_raw.shape[0]} (seed={SEED})\n")
+        f.write(f"- **Epochs**: {epochs} (early stopping patience={patience})\n")
+        f.write("- **Optimizer**: AdamW (lr=1e-3, weight_decay=1e-2)\n")
+        f.write("- **Scheduler**: CosineAnnealingLR\n")
+        f.write("- **Loss**: CrossEntropyLoss\n\n")
+        f.write("### Hasil Perbandingan Komparatif\n\n")
         f.write(summary_df.to_markdown(index=False) + "\n\n")
-        f.write("### Analisis Singkat:\n")
-        f.write("1. **Proposed 1M Model** memiliki keunggulan performa latensi dan akurasi yang seimbang pada topologi tipis skeleton.\n")
-        f.write("2. **CNN_GRU** menggabungkan ekstraksi spasial dan temporal (BiGRU) namun memerlukan penanganan dimensi sequence.\n")
-        f.write("3. **MobileNetV3_Small** mewakili arsitektur edge CNN konvensional yang ringan.\n")
-        f.write("4. **MobileViT_XXS** menggabungkan atensi transformer dengan efisiensi konvolusi.\n")
-        
-    print(f"\nBenchmark reports saved successfully in: ocr_evaluation_outputs_breakthrough/")
+        f.write("### Referensi Arsitektur\n\n")
+        f.write("| Model | Referensi | Deskripsi Arsitektur |\n")
+        f.write("|---|---|---|\n")
+        f.write("| **ResNet-18** | He et al., CVPR 2016 | Standar industri mid-weight, residual connection |\n")
+        f.write("| **MobileNetV3-Large** | Howard et al., ICCV 2019 | Standar industri edge-optimized dengan MBConv |\n")
+        f.write("| **Proposed_1M** | Custom | Model usulan: dilated conv + SE attention blocks |\n")
+    
+    # Save JSON results
+    json_results = {}
+    for m_name, res in results.items():
+        json_results[m_name] = {
+            "model_base": m_name.replace("_Raw", "").replace("_Skeleton", ""),
+            "input_type": res["input_type"],
+            "params": res["params"],
+            "strict_accuracy": round(res["strict_accuracy"], 4),
+            "tolerant_accuracy": round(res["tolerant_accuracy"], 4),
+            "avg_latency_ms": round(res["avg_latency_ms"], 6),
+            "paper_ref": paper_refs.get(m_name, "")
+        }
+    
+    with open(os.path.join(output_dir, "benchmark_results.json"), "w") as f:
+        import json
+        json.dump(json_results, f, indent=2)
+    
+    print(f"\n[OK] Reports saved to: {output_dir}/")
+    print(f"  - benchmark_summary.csv")
+    print(f"  - benchmark_report.md")
+    print(f"  - benchmark_results.json")
+    print(f"  - Per-model: classification reports, confusion matrices, training curves")
+
 
 if __name__ == "__main__":
     main()
