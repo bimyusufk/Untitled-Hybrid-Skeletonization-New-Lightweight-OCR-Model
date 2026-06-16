@@ -1,0 +1,42 @@
+{
+  "Shallow_CNN_Only": {
+    "input_type": "Clean Binary",
+    "is_hybrid": "NO",
+    "params": 556190,
+    "strict_accuracy": 0.0,
+    "tolerant_accuracy": 0.0,
+    "avg_latency_ms": 0.611095
+  },
+  "Shallow_CNN_Hybrid": {
+    "input_type": "Clean Binary",
+    "is_hybrid": "YES",
+    "params": 556500,
+    "strict_accuracy": 1.5625,
+    "tolerant_accuracy": 1.5625,
+    "avg_latency_ms": 0.564753
+  },
+  "Gradient_CNN_Only": {
+    "input_type": "Morphological Gradient",
+    "is_hybrid": "NO",
+    "params": 556190,
+    "strict_accuracy": 1.5625,
+    "tolerant_accuracy": 3.125,
+    "avg_latency_ms": 0.760736
+  },
+  "Gradient_CNN_Hybrid": {
+    "input_type": "Morphological Gradient",
+    "is_hybrid": "YES",
+    "params": 556500,
+    "strict_accuracy": 6.25,
+    "tolerant_accuracy": 6.25,
+    "avg_latency_ms": 0.719059
+  },
+  "Proposed_1M_Raw": {
+    "input_type": "Clean Binary",
+    "is_hybrid": "NO",
+    "params": 1074987,
+    "strict_accuracy": 1.5625,
+    "tolerant_accuracy": 3.125,
+    "avg_latency_ms": 1.172445
+  }
+}

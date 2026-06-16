@@ -1,0 +1,6 @@
+Model,Input Type,Hybrid (Topologi),Parameters,Strict Acc (%),Tolerant Acc (%),Latency (ms)
+Shallow_CNN_Only,Clean Binary,NO,"556,190",0.00,0.00,0.6111
+Shallow_CNN_Hybrid,Clean Binary,YES,"556,500",1.56,1.56,0.5648
+Gradient_CNN_Only,Morphological Gradient,NO,"556,190",1.56,3.12,0.7607
+Gradient_CNN_Hybrid,Morphological Gradient,YES,"556,500",6.25,6.25,0.7191
+Proposed_1M_Raw,Clean Binary,NO,"1,074,987",1.56,3.12,1.1724
