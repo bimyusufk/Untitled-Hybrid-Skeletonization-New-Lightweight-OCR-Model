@@ -6,8 +6,11 @@ __pycache__/
 
 # Environments
 .venv/
+.venv_wsl/
 venv/
 env/
+Miniconda3-latest-Linux-x86_64.sh
+
 
 # IDE configurations
 .vscode/

@@ -27,6 +27,19 @@ CONFIG["experiments"]["baselines"]["models"]["mobilenetv2"]["enabled"] = False
 CONFIG["experiments"]["baselines"]["models"]["hog_svm"]["enabled"] = False
 
 # GPU setup
+import ctypes
+import sys
+if sys.platform.startswith("linux"):
+    try:
+        for path in sys.path:
+            possible_path = os.path.join(path, "nvidia", "cusolver", "lib", "libcusolver.so.11")
+            if os.path.exists(possible_path):
+                ctypes.CDLL(possible_path)
+                print(f"[GPU] Preloaded libcusolver: {possible_path}")
+                break
+    except Exception as e:
+        print(f"[GPU] Warning: Failed to preload libcusolver: {e}")
+
 if not CONFIG["hardware"]["use_gpu"]:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 

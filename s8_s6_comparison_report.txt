@@ -2,15 +2,15 @@
 
 Model A: Hybrid Skeleton S1+S8+S3+SE+S2 (Baseline 64x64)
 - Parameters: 571,644
-- Chars74K Strict Accuracy: 81.83%
-- Chars74K Tolerant Accuracy: 87.61%
-- Average Latency: 1.9903 ms/image
-- Training Duration: 2.33 min
+- Chars74K Strict Accuracy: 82.09%
+- Chars74K Tolerant Accuracy: 88.77%
+- Average Latency: 1.3249 ms/image
+- Training Duration: 1.60 min
 
 Model B: Hybrid Skeleton S1+S8+S3+SE+S2+S6_v3 (Distilled 64x64)
 - Parameters: 571,644
-- Chars74K Strict Accuracy: 82.48%
-- Chars74K Tolerant Accuracy: 89.03%
-- Average Latency: 2.0455 ms/image
-- Training Duration (Distillation): 1.82 min
+- Chars74K Strict Accuracy: 82.74%
+- Chars74K Tolerant Accuracy: 89.23%
+- Average Latency: 1.3006 ms/image
+- Training Duration (Distillation): 2.67 min
 
