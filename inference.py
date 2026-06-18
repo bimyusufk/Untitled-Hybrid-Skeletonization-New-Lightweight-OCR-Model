@@ -4,13 +4,13 @@ import cv2
 import numpy as np
 import torch
 from super_hybrid_benchmarking import (
-    SuperHybridCNN,
+    TopoGradNet,
     preprocess_image,
     extract_super_features,
     CLASS_LIST,
 )
 
-def run_inference(image_path, model_path="ocr_evaluation_outputs_super_hybrid/SuperHybrid_Gradient.pth"):
+def run_inference(image_path, model_path="ocr_evaluation_outputs_super_hybrid/TopoGrad-Net.pth"):
     # 1. Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
@@ -19,7 +19,7 @@ def run_inference(image_path, model_path="ocr_evaluation_outputs_super_hybrid/Su
         raise FileNotFoundError(f"Model weights not found at: {model_path}")
         
     # 3. Load model
-    model = SuperHybridCNN(num_classes=62, feat_dim=12)
+    model = TopoGradNet(num_classes=62, feat_dim=12)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     model.eval()
@@ -63,7 +63,7 @@ def run_inference(image_path, model_path="ocr_evaluation_outputs_super_hybrid/Su
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Inference script for TopoGrad-Net")
     parser.add_argument("--image", type=str, required=True, help="Path to input character image")
-    parser.add_argument("--model", type=str, default="ocr_evaluation_outputs_super_hybrid/SuperHybrid_Gradient.pth", help="Path to model weights")
+    parser.add_argument("--model", type=str, default="ocr_evaluation_outputs_super_hybrid/TopoGrad-Net.pth", help="Path to model weights")
     args = parser.parse_args()
     
     try:

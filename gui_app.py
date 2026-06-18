@@ -6,14 +6,14 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 from super_hybrid_benchmarking import (
-    SuperHybridCNN,
+    TopoGradNet,
     preprocess_image,
     extract_super_features,
     CLASS_LIST,
 )
 
 # Configuration
-MODEL_PATH = "ocr_evaluation_outputs_super_hybrid/SuperHybrid_Gradient.pth"
+MODEL_PATH = "ocr_evaluation_outputs_super_hybrid/TopoGrad-Net.pth"
 
 class TopoGradOCRApp:
     def __init__(self, root):
@@ -37,7 +37,7 @@ class TopoGradOCRApp:
             )
             return None
         try:
-            model = SuperHybridCNN(num_classes=62, feat_dim=12)
+            model = TopoGradNet(num_classes=62, feat_dim=12)
             model.load_state_dict(torch.load(MODEL_PATH, map_location=self.device))
             model.to(self.device)
             model.eval()

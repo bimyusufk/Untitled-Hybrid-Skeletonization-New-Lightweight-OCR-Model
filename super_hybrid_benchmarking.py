@@ -4,8 +4,8 @@ SUPER HYBRID BENCHMARKING: MENGALAHKAN MODEL BERAT
 =======================================================================
 
 Model dan Skenario yang dibenchmark (4 Skenario):
-1. SuperHybrid_Binary   - SuperHybridCNN (~1.16M) pada input Clean Binary (dengan Online Augmentation + 12 Fitur).
-2. SuperHybrid_Gradient - SuperHybridCNN (~1.16M) pada input Morphological Gradient (dengan Online Augmentation + 12 Fitur).
+1. TopoGrad-Net_Binary   - TopoGradNet (~1.16M) pada input Clean Binary (dengan Online Augmentation + 12 Fitur).
+2. TopoGrad-Net          - TopoGradNet (~1.16M) pada input Morphological Gradient (dengan Online Augmentation + 12 Fitur).
 3. Gradient_CNN_Hybrid  - ShallowCNNHybrid (~556k) pada input Morphological Gradient (Baseline Hybrid 5 Fitur - Tanpa Augmentasi).
 4. Proposed_1M_Raw      - Proposed1MModel (~1.07M) pada input Clean Binary (Baseline Dilated CNN).
 
@@ -252,9 +252,9 @@ class SuperDataset(Dataset):
 # FASE 2: DEFINISI ARSITEKTUR MODEL
 # =====================================================================
 
-class SuperHybridCNN(nn.Module):
+class TopoGradNet(nn.Module):
     """
-    SuperHybridCNN (~1.16M parameter).
+    TopoGradNet (~1.16M parameter).
     CNN Backbone [32, 64, 128] filter dengan 12 fitur topologi/Hu di classifier head.
     """
     def __init__(self, num_classes=62, in_channels=1, feat_dim=12):
@@ -745,10 +745,10 @@ def main():
                                  batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=(device.type == "cuda"))
                                  
     configs = [
-        ("SuperHybrid_Binary", lambda: SuperHybridCNN(NUM_CLASSES, feat_dim=12), "Clean Binary", 
+        ("TopoGrad-Net_Binary", lambda: TopoGradNet(NUM_CLASSES, feat_dim=12), "Clean Binary", 
          train_loader_super_bin, val_loader_super_bin, test_loader_super_bin, True, 12),
          
-        ("SuperHybrid_Gradient", lambda: SuperHybridCNN(NUM_CLASSES, feat_dim=12), "Morphological Gradient", 
+        ("TopoGrad-Net", lambda: TopoGradNet(NUM_CLASSES, feat_dim=12), "Morphological Gradient", 
          train_loader_super_grad, val_loader_super_grad, test_loader_super_grad, True, 12),
          
         ("Gradient_CNN_Hybrid_Baseline", lambda: ShallowCNNHybrid(NUM_CLASSES, feat_dim=5), "Morphological Gradient", 
@@ -784,10 +784,10 @@ def main():
         test_loader_raw = DataLoader(SuperDataset(X_test[:64], y_test[:64], is_training=False, use_gradient=False, is_super_hybrid=False), batch_size=32, shuffle=False)
         
         configs = [
-            ("SuperHybrid_Binary", lambda: SuperHybridCNN(NUM_CLASSES, feat_dim=12), "Clean Binary", 
+            ("TopoGrad-Net_Binary", lambda: TopoGradNet(NUM_CLASSES, feat_dim=12), "Clean Binary", 
              train_loader_super_bin, val_loader_super_bin, test_loader_super_bin, True, 12),
              
-            ("SuperHybrid_Gradient", lambda: SuperHybridCNN(NUM_CLASSES, feat_dim=12), "Morphological Gradient", 
+            ("TopoGrad-Net", lambda: TopoGradNet(NUM_CLASSES, feat_dim=12), "Morphological Gradient", 
              train_loader_super_grad, val_loader_super_grad, test_loader_super_grad, True, 12),
              
             ("Gradient_CNN_Hybrid_Baseline", lambda: ShallowCNNHybrid(NUM_CLASSES, feat_dim=5), "Morphological Gradient", 
