@@ -1,0 +1,11 @@
+=========================================
+       EDGE COMPATIBILITY PROFILE
+=========================================
+Model Parameters:   1,168,382
+Model Size (ONNX):  0.0201 MB
+Estimated FLOPs:    80.01 MFLOPs
+PyTorch CPU Latency: 5.2977 ms
+PyTorch Throughput:  188.76 imgs/sec
+ONNX Runtime Latency: 2.3050 ms
+ONNX Runtime Throughput: 433.84 imgs/sec
+=========================================

@@ -1,0 +1,37 @@
+{
+  "SuperHybrid_Raw": {
+    "mode": "raw",
+    "params": 1168382,
+    "strict_accuracy": 84.95460440985732,
+    "tolerant_accuracy": 90.92088197146563,
+    "avg_latency_ms": 0.040484983691445584
+  },
+  "SuperHybrid_Gradient": {
+    "mode": "gradient",
+    "params": 1168382,
+    "strict_accuracy": 86.25162127107653,
+    "tolerant_accuracy": 92.7367055771725,
+    "avg_latency_ms": 0.04174773630851592
+  },
+  "SuperHybrid_Canny": {
+    "mode": "canny",
+    "params": 1168382,
+    "strict_accuracy": 85.21400778210116,
+    "tolerant_accuracy": 91.69909208819715,
+    "avg_latency_ms": 0.04149838616460291
+  },
+  "SuperHybrid_Sobel": {
+    "mode": "sobel",
+    "params": 1168382,
+    "strict_accuracy": 85.21400778210116,
+    "tolerant_accuracy": 91.56939040207523,
+    "avg_latency_ms": 0.04039618643254389
+  },
+  "SuperHybrid_Laplacian": {
+    "mode": "laplacian",
+    "params": 1168382,
+    "strict_accuracy": 85.473411154345,
+    "tolerant_accuracy": 92.0881971465629,
+    "avg_latency_ms": 0.04107112351239655
+  }
+}

@@ -40,6 +40,7 @@ datasets/*.npz
 # Archives and transfer files
 *.zip
 *.tar
+*.tar.gz
 
 # Model weights
 *.pth

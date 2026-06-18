@@ -1,0 +1,6 @@
+Model,Mode,Parameters,Strict Acc (%),Tolerant Acc (%),Latency (ms)
+SuperHybrid_Raw,RAW,"1,168,382",84.95,90.92,0.0405
+SuperHybrid_Gradient,GRADIENT,"1,168,382",86.25,92.74,0.0417
+SuperHybrid_Canny,CANNY,"1,168,382",85.21,91.70,0.0415
+SuperHybrid_Sobel,SOBEL,"1,168,382",85.21,91.57,0.0404
+SuperHybrid_Laplacian,LAPLACIAN,"1,168,382",85.47,92.09,0.0411

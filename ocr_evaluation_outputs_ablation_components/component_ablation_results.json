@@ -1,0 +1,44 @@
+{
+  "A1_CNN_Only_Raw": {
+    "params": 1150078,
+    "strict_accuracy": 80.02594033722438,
+    "tolerant_accuracy": 86.51102464332037,
+    "avg_latency_ms": 0.04077242142563123
+  },
+  "A2_CNN_Only_Gradient": {
+    "params": 1150078,
+    "strict_accuracy": 80.28534370946822,
+    "tolerant_accuracy": 87.54863813229572,
+    "avg_latency_ms": 0.04061366293709798
+  },
+  "A3_CNN_RegionProps": {
+    "params": 1167486,
+    "strict_accuracy": 80.8041504539559,
+    "tolerant_accuracy": 87.80804150453956,
+    "avg_latency_ms": 0.040683983831186855
+  },
+  "A4_CNN_HuMoments": {
+    "params": 1167742,
+    "strict_accuracy": 81.58236057068741,
+    "tolerant_accuracy": 87.54863813229572,
+    "avg_latency_ms": 0.04331570513662429
+  },
+  "A5_CNN_12Feats": {
+    "params": 1168382,
+    "strict_accuracy": 80.8041504539559,
+    "tolerant_accuracy": 87.28923476005188,
+    "avg_latency_ms": 0.04101109850412445
+  },
+  "A6_CNN_12Feats_Aug": {
+    "params": 1168382,
+    "strict_accuracy": 85.60311284046692,
+    "tolerant_accuracy": 91.69909208819715,
+    "avg_latency_ms": 0.03942767618376226
+  },
+  "A7_CNN_12Feats_Aug_HF": {
+    "params": 1168382,
+    "strict_accuracy": 86.25162127107653,
+    "tolerant_accuracy": 92.0881971465629,
+    "avg_latency_ms": 0.04061142673616898
+  }
+}

@@ -1,0 +1,5 @@
+Model,Accuracy (Seed Runs),Mean ± Std,Wilcoxon p-val,Paired T-test p-val
+SuperHybrid_Gradient,"84.82%, 87.42%, 86.12%, 85.47%, 86.64%",86.10 ± 0.90%,-,-
+SuperHybrid_Binary,"84.95%, 87.42%, 85.86%, 84.57%, 85.34%",85.63 ± 0.99%,0.2500,0.1635
+Gradient_CNN_Hybrid_Baseline,"78.99%, 82.36%, 80.03%, 79.90%, 79.25%",80.10 ± 1.19%,0.0625,0.0001
+Proposed_1M_Raw_Baseline,"85.34%, 85.99%, 85.60%, 82.88%, 83.27%",84.62 ± 1.28%,0.1250,0.1015

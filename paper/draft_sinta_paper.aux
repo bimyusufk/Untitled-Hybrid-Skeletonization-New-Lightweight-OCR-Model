@@ -1,68 +1,94 @@
 \relax 
-\citation{shi2015edge}
+\citation{sandler2018mobilenetv2}
 \citation{parulian2025efficient}
 \citation{decampos2009character}
 \citation{zhang1984fast}
 \citation{khobragade2014evaluations}
-\@writefile{toc}{\contentsline {section}{\numberline {I}Pendahuluan}{1}{}\protected@file@percent }
 \citation{shi2022rcrn}
+\citation{soille2004morphological}
+\citation{hu1962visual}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Pendahuluan}{1}{}\protected@file@percent }
+\citation{he2016deep}
+\citation{howard2019searching}
 \citation{decampos2009character}
 \@writefile{toc}{\contentsline {section}{\numberline {II}Metode Penelitian}{2}{}\protected@file@percent }
 \newlabel{sec:metode}{{II}{2}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Gambaran Umum Sistem}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Diagram blok arsitektur model keseluruhan. Garis putus-putus hijau menunjukkan jalur ekstraksi 12 fitur topologi dari citra biner bersih, yang difusikan ke kepala klasifikasi CNN.}}{2}{}\protected@file@percent }
+\newlabel{fig:arch_diagram}{{1}{2}{}{}{}}
+\newlabel{eq:morph_grad}{{1}{2}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Dataset dan Preprocessing}{2}{}\protected@file@percent }
-\citation{cohen2017emnist}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Diagram blok arsitektur model keseluruhan mulai dari input hingga output.}}{3}{}\protected@file@percent }
-\newlabel{fig:arch_diagram}{{1}{3}{}{}{}}
+\citation{hu1962visual}
 \@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Karakteristik Distribusi Kelas Dataset Chars74K}}{3}{}\protected@file@percent }
 \newlabel{tab:class_dist}{{I}{3}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Arsitektur Model}{3}{}\protected@file@percent }
-\citation{lecun1998gradient}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Tahapan hasil prapemrosesan data karakter: Citra Asli (Raw) $\to $ Otsu Thresholding $\to $ Conditional Hole-Filling ($\le 7$ piksel) $\to $ Citra Skeletonized (1 piksel).}}{4}{}\protected@file@percent }
-\newlabel{fig:preprocess_compare}{{2}{4}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Model Baseline Standar Industri}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-E}}Fungsi Loss}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-F}}Konfigurasi Pelatihan}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-G}}Metrik Evaluasi}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Ekstraksi Fitur Topologi}{3}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Perbandingan tahapan prapemrosesan: (1) Citra Asli, (2) Binerisasi Bersih (Otsu + Hole-filling $\le 35$ px), (3) Skeletonisasi 1 piksel (metode konvensional), (4) Morphological Gradient / kontur (metode yang diusulkan).}}{3}{}\protected@file@percent }
+\newlabel{fig:preprocess_compare}{{2}{3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Arsitektur Model yang Diusulkan}{3}{}\protected@file@percent }
+\citation{he2016deep}
+\citation{howard2019searching}
+\citation{loshchilov2019decoupled}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-E}}Augmentasi Data Online}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-F}}Model Pembanding}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-G}}Fungsi Loss}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-H}}Konfigurasi Pelatihan}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-I}}Metrik Evaluasi}{4}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {III}Hasil Penelitian}{4}{}\protected@file@percent }
 \newlabel{sec:hasil}{{III}{4}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Hasil Perbandingan dengan Baseline Eksternal}{5}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Perbandingan Performa Pengenalan Alphanumeric pada Chars74K}}{5}{}\protected@file@percent }
-\newlabel{tab:comparison}{{II}{5}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Eksperimen Variabel Terkontrol (Fase 1)}{5}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Hasil Eksperimen Variabel Terkontrol}}{5}{}\protected@file@percent }
-\newlabel{tab:controlled}{{III}{5}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Analisis Sensitivitas Threshold Hole-Filling dan Kualitas Skeleton}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Cross-Dataset Validation (EMNIST)}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Benchmark Latensi Rigoris dan Wilcoxon Signed-Rank Test}{5}{}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Analisis Sensitivitas Threshold Hole-Filling Terhadap Akurasi dan Kualitas Geometris Skeleton}}{6}{}\protected@file@percent }
-\newlabel{tab:threshold_quality}{{IV}{6}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Evaluasi Generalisasi Lintas Dataset (Train: Chars74K, Test: EMNIST)}}{6}{}\protected@file@percent }
-\newlabel{tab:cross_dataset}{{V}{6}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Statistik Deskriptif Latensi Inferensi Sekuensial ($N=1000$ run)}}{6}{}\protected@file@percent }
-\newlabel{tab:latency}{{VI}{6}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Grafik perbandingan akurasi, Macro F1, parameter model, dan waktu inferensi batch untuk kelima model pembanding.}}{6}{}\protected@file@percent }
-\newlabel{fig:baseline_compare}{{3}{6}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Kurva sensitivitas pengaruh variasi threshold hole-filling terhadap akurasi OCR (kiri) dan parameter kualitas geometris rangka (kanan).}}{6}{}\protected@file@percent }
-\newlabel{fig:threshold_sens}{{4}{6}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Histogram distribusi latensi inferensi sekuensial ($N=1000$ run) untuk masing-masing arsitektur deep learning.}}{6}{}\protected@file@percent }
-\newlabel{fig:latency_dist}{{5}{6}{}{}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Pembahasan}{6}{}\protected@file@percent }
-\newlabel{sec:pembahasan}{{IV}{6}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Interpretasi Keunggulan Geometris dan Generalisasi}{6}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Pembersihan Derau Topologi Secara Empiris}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Studi Pendahuluan: Evaluasi Prapemrosesan Skeletonisasi}{4}{}\protected@file@percent }
+\newlabel{sec:pendahuluan_skel}{{\mbox  {III-A}}{4}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Studi Pendahuluan: Eksperimen Variabel Terkontrol Prapemrosesan Skeletonisasi}}{4}{}\protected@file@percent }
+\newlabel{tab:controlled}{{II}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Studi Pendahuluan: Analisis Sensitivitas Threshold Hole-Filling}{5}{}\protected@file@percent }
+\newlabel{sec:threshold}{{\mbox  {III-B}}{5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Hasil Perbandingan Model Usulan dengan Baseline}{5}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Kurva pelatihan (loss dan akurasi) dari model TopoGrad-Net sepanjang 50 epoch dengan \textit  {early stopping}.}}{5}{}\protected@file@percent }
+\newlabel{fig:training_curves}{{3}{5}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Matriks kebingungan (\textit  {confusion matrix}) dari model TopoGrad-Net untuk 62 kelas alphanumeric.}}{5}{}\protected@file@percent }
+\newlabel{fig:confusion_matrix}{{4}{5}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Sampel hasil prediksi pada data uji dengan perbandingan label aktual (T) dan prediksi (P).}}{5}{}\protected@file@percent }
+\newlabel{fig:prediction_samples}{{5}{5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Ablasi Metode Ekstraksi Tepi}{5}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Analisis Sensitivitas Threshold Hole-Filling Terhadap Akurasi dan Kualitas Geometris}}{6}{}\protected@file@percent }
+\newlabel{tab:threshold_quality}{{III}{6}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Perbandingan Performa Pengenalan Alphanumeric pada Chars74K}}{6}{}\protected@file@percent }
+\newlabel{tab:comparison}{{IV}{6}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Hasil Studi Ablasi Metode Ekstraksi Tepi}}{6}{}\protected@file@percent }
+\newlabel{tab:ablation_preprocessing}{{V}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Ablasi Komponen Modular}{6}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Hasil Studi Ablasi Komponen Modular}}{6}{}\protected@file@percent }
+\newlabel{tab:ablation_components}{{VI}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Validasi Silang Lintas Dataset}{6}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Hasil Validasi Silang Dataset Chars74K dan EMNIST}}{6}{}\protected@file@percent }
+\newlabel{tab:cross_dataset}{{VII}{6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-G}}Uji Signifikansi Statistik}{6}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Hasil Analisis Perbandingan Signifikansi Statistik (5 Random Seeds)}}{7}{}\protected@file@percent }
+\newlabel{tab:statistical_comparison}{{VIII}{7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-H}}Visualisasi Feature Map}{7}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Visualisasi feature maps pada model TopoGrad-Net. Atas: Perbandingan citra biner input dan gradien. Bawah: Peta aktivasi internal pada Conv1, Conv2, dan Conv3 yang menunjukkan kontinuitas kontur tepi tetap terjaga meskipun melewati operasi pooling.}}{7}{}\protected@file@percent }
+\newlabel{fig:feature_maps}{{6}{7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-I}}Latensi dan Kompatibilitas Perangkat Edge}{7}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Profil Latensi dan Kompatibilitas Komputasi Edge Model Usulan}}{7}{}\protected@file@percent }
+\newlabel{tab:edge_profiling}{{IX}{7}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Pembahasan}{7}{}\protected@file@percent }
+\newlabel{sec:pembahasan}{{IV}{7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Keunggulan Morphological Gradient atas Skeletonisasi}{7}{}\protected@file@percent }
+\citation{hu1962visual}
 \bibcite{zhang1984fast}{1}
-\bibcite{lecun1998gradient}{2}
-\bibcite{he2016deep}{3}
-\bibcite{kingma2015adam}{4}
+\bibcite{he2016deep}{2}
+\bibcite{howard2019searching}{3}
+\bibcite{loshchilov2019decoupled}{4}
 \bibcite{parulian2025efficient}{5}
 \bibcite{khobragade2014evaluations}{6}
-\bibcite{shi2015edge}{7}
+\bibcite{sandler2018mobilenetv2}{7}
 \bibcite{decampos2009character}{8}
 \bibcite{shi2022rcrn}{9}
-\bibcite{cohen2017emnist}{10}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Evaluasi Kausal Efisiensi Arsitektur}{7}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {V}Kesimpulan}{7}{}\protected@file@percent }
-\newlabel{sec:kesimpulan}{{V}{7}{}{}{}}
-\@writefile{toc}{\contentsline {section}{References}{7}{}\protected@file@percent }
-\gdef \@abspage@last{7}
+\bibcite{hu1962visual}{10}
+\bibcite{soille2004morphological}{11}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Efektivitas Fusi Fitur Topologi}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Efisiensi pada Perangkat Berdaya Rendah}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Keterbatasan dan Arah Pengembangan}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Kesimpulan}{8}{}\protected@file@percent }
+\newlabel{sec:kesimpulan}{{V}{8}{}{}{}}
+\@writefile{toc}{\contentsline {section}{References}{8}{}\protected@file@percent }
+\gdef \@abspage@last{8}

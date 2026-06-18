@@ -1,0 +1,263 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[bahasa]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{top=3cm, bottom=3cm, left=3.5cm, right=3cm}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\begin{document}
+
+% ----------------------------------------------------------------------------------
+% COVER PAGE
+% ----------------------------------------------------------------------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    {\large\bfseries PENERAPAN FILTER MORFOLOGI GRADIENT UNTUK EKSTRAKSI KONTUR PADA KLASIFIKASI KARAKTER ALPHANUMERIC \\}
+    \vspace{0.3cm}
+    {\large\itshape Subjudul: Applying Morphological filters \\}
+    
+    \vspace{2.5cm}
+    
+    {\large\bfseries LAPORAN UJIAN AKHIR SEMESTER\\}
+    
+    \vspace{1.5cm}
+    
+    {\large diajukan sebagai hasil proyek dalam mata kuliah\\
+    Pengolahan dan Analisis Citra Digital\\
+    Semester Genap 2025-2026\\}
+    
+    \vspace{2.5cm}
+    
+    {\large\bfseries NPM 140810160053\\}
+    
+    \vfill
+    
+    \vspace{2cm}
+    
+    {\large\bfseries UNIVERSITAS PADJADJARAN\\
+    FAKULTAS MATEMATIKA DAN ILMU PENGETAHUAN ALAM\\
+    PROGRAM STUDI TEKNIK INFORMATIKA\\
+    SUMEDANG\\
+    2026\\}
+    
+    \vspace{1cm}
+\end{titlepage}
+
+\newpage
+\pagenumbering{arabic}
+
+% ----------------------------------------------------------------------------------
+% PERSIAPAN (GETTING READY)
+% ----------------------------------------------------------------------------------
+\section*{PERSIAPAN}
+Bagian ini menjelaskan ekspektasi proyek yang dikerjakan serta persiapan perangkat lunak dan pengaturan awal yang dilakukan untuk menjalankan proyek ini.
+
+\subsection*{Ekspektasi Proyek}
+Di dalam proyek ini, dibangun sistem pengenalan karakter alphanumeric (A-Z, a-z, 0-9) yang tangguh namun sangat ringan untuk diimplementasikan pada perangkat tertanam berspesifikasi rendah (\textit{resource-constrained edge devices}). Untuk mencapai tujuan tersebut, diterapkan filter morfologi berupa \textbf{Morphological Gradient} untuk mengekstraksi kontur luar dari karakter citra input.
+
+Model yang dirancang, bernama \textbf{TopoGrad-Net}, memanfaatkan kombinasi representasi kontur morfologi tersebut dengan fitur topologi analitis (Hu Moments dan properti wilayah) yang dilebur secara langsung melalui teknik fusi fitur (\textit{feature fusion}).
+
+\subsection*{Persyaratan Perangkat Lunak}
+Untuk menjalankan proyek ini, disiapkan lingkungan Python 3.10+ beserta beberapa pustaka utama sebagai berikut:
+\begin{itemize}
+    \item \texttt{PyTorch} ($\ge 2.0$) dan \texttt{torchvision} sebagai kerangka kerja deep learning utama yang digunakan.
+    \item \texttt{scikit-image} ($\ge 0.20$) untuk pengolahan filter morfologi serta ekstraksi properti wilayah dan momen Hu.
+    \item \texttt{OpenCV (opencv-python)} untuk pembacaan dan pemrosesan piksel gambar dasar.
+    \item \texttt{numpy} dan \texttt{scipy} untuk komputasi numerik dan analisis statistik.
+    \item \texttt{onnx} dan \texttt{onnxruntime} untuk mengekspor model ke format ONNX dan profiling kecepatan pada CPU lokal.
+    \item \texttt{PyYAML} untuk pengelolaan konfigurasi parameter proyek secara terpusat.
+\end{itemize}
+
+Instalasi seluruh dependensi tersebut dilakukan dengan menjalankan perintah:
+\begin{lstlisting}[language=bash]
+pip install numpy scipy opencv-python scikit-image torch torchvision onnx onnxruntime pyyaml
+\end{lstlisting}
+
+\subsection*{Dataset dan Struktur Direktori}
+Dataset yang digunakan adalah \textbf{Chars74K (subset Alphanumeric)} yang diletakkan pada direktori \texttt{datasets/raw}. Struktur direktori proyek disusun secara rapi sebagai berikut untuk mendukung eksekusi kode:
+\begin{lstlisting}[language=bash]
+.
+|-- config.yaml
+|-- datasets/
+|   |-- raw/                 # Berisi 62 subdirektori karakter asli
+|   `-- annotations.csv
+|-- research/
+|   |-- preprocessing.py     # Pipeline filter morfologi
+|   |-- augmentations.py     # Data augmentation khusus kontur
+|   |-- models.py            # Definisi arsitektur TopoGrad-Net
+|   `-- evaluation.py        # Modul metrik evaluasi & profiling
+`-- super_hybrid_benchmarking.py   # Skrip utama eksperimen
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------------
+% CARA MELAKUKANNYA (HOW TO DO IT)
+% ----------------------------------------------------------------------------------
+\section*{CARA MELAKUKANNYA}
+Bagian ini berisi langkah-langkah yang dilakukan untuk mengimplementasikan proyek ini dari awal hingga akhir.
+
+\subsection*{Langkah 1: Konfigurasi Parameter}
+Berkas \texttt{config.yaml} disunting untuk mendefinisikan batasan parameter, hyperparameter pelatihan, dan jalur penyimpanan hasil eksperimen proyek.
+\begin{lstlisting}[language=bash]
+# Konfigurasi proyek yang digunakan
+model:
+  name: "TopoGrad-Net"
+  resolution: 64
+  backbone_filters: [32, 64, 128]
+  dense_units: 128
+  topological_features_dim: 12
+
+training:
+  batch_size: 64
+  epochs: 50
+  learning_rate: 0.001
+  weight_decay: 0.01
+  early_stopping_patience: 10
+\end{lstlisting}
+
+\subsection*{Langkah 2: Menjalankan Pipeline Prapemrosesan Morfologi}
+Pipeline prapemrosesan gambar diimplementasikan secara sekuensial dengan langkah-langkah sebagai berikut:
+\begin{enumerate}
+    \item \textbf{Deteksi Polaritas Otomatis}: Intensitas piksel pada bingkai luar gambar dianalisis untuk mendeteksi polaritas warna karakter, lalu dibalik secara otomatis agar karakter selalu berwarna putih di atas latar hitam (nilai biner 1).
+    \item \textbf{Binerisasi Otsu}: Gambar skala abu-abu dikonversi menjadi citra biner secara dinamis menggunakan ambang batas optimal dari kalkulasi histogram intensitas.
+    \item \textbf{Pembersihan Derau (Hole Filling)}: Komponen lubang-lubang kecil yang tidak diinginkan pada latar depan yang memiliki luas $\le 35$ piksel dibuang untuk mengeliminasi derau tanpa merusak bentuk dasar huruf.
+    \item \textbf{Morphological Gradient}: Kontur luar karakter diekstraksi menggunakan operator gradien morfologi berbasis kernel penstruktur $2 \times 2$ piksel.
+\end{enumerate}
+
+\subsection*{Langkah 3: Mengekstraksi Fitur Topologi dan Hu Moments}
+Sebanyak 12 fitur topologi dihitung secara paralel langsung dari hasil binerisasi citra yang bersih:
+\begin{itemize}
+    \item \textbf{5 Fitur Wilayah}: Diekstraksi \textit{Euler Number} (untuk mendeteksi jumlah lubang), \textit{Eccentricity} (tingkat kelonjongan), \textit{Aspect Ratio} (proporsi dimensi), \textit{Extent} (rasio luas objek), dan \textit{Solidity} (kepadatan bentuk convex hull).
+    \item \textbf{7 Hu Moments}: Dihitung 7 momen Hu yang invarian terhadap rotasi, skala, dan translasi. Momen ini ditransformasikan secara logaritmik agar stabil secara numerik:
+    \begin{equation*}
+        h_i^{(\text{log})} = -\text{sign}(h_i) \cdot \log_{10}(|h_i|), \quad i = 1, \ldots, 7
+    \end{equation*}
+\end{itemize}
+
+\subsection*{Langkah 4: Pelatihan Model TopoGrad-Net}
+Model \textbf{TopoGrad-Net} dilatih menggunakan skrip utama \texttt{super\_hybrid\_benchmarking.py} dengan mengaktifkan fusi fitur serta data augmentasi online (rotasi acak $\pm 10^\circ$ dan translasi acak $\pm 10\%$):
+\begin{lstlisting}[language=bash]
+python super_hybrid_benchmarking.py
+\end{lstlisting}
+Skrip ini melatih model dari awal, menyimpan bobot optimal, dan mengekspor visualisasi performa ke folder \texttt{ocr\_evaluation\_outputs\_super\_hybrid/}.
+
+\subsection*{Langkah 5: Profiling Latensi pada CPU}
+Model PyTorch diekspor ke format ONNX dan diukur kecepatan inferensinya menggunakan \texttt{ONNX Runtime} CPU:
+\begin{lstlisting}[language=bash]
+python edge_profiling.py --model_path outputs/topograd_net.onnx
+\end{lstlisting}
+
+% ----------------------------------------------------------------------------------
+% CARA KERJANYA… (HOW IT WORKS…)
+% ----------------------------------------------------------------------------------
+\section*{CARA KERJANYA…}
+Bagian ini menjelaskan secara rinci mekanisme di balik pipeline pengolahan citra dan model klasifikasi yang dirancang.
+
+\subsection*{Filter Morfologi (Morphological Gradient)}
+Operator \textit{Morphological Gradient} dimanfaatkan untuk mendeteksi kontur luar karakter. Operator ini dihitung dengan mencari selisih antara operasi dilasi morfologi ($\oplus$) dan erosi morfologi ($\ominus$) menggunakan elemen penstruktur $B$ berukuran $2 \times 2$ piksel:
+\begin{equation}
+    I_{grad} = (I_{clean} \oplus B) - (I_{clean} \ominus B)
+\end{equation}
+Melalui operasi ini, diperoleh representasi tepi karakter berupa garis kontur yang kontinu dengan ketebalan yang stabil. Ketebalan kontur ini sangat krusial karena memberikan ketahanan spasial saat melewati lapisan pooling di dalam CNN. Dengan ketebalan kontur yang ideal, aliran informasi bentuk karakter tetap terjaga secara utuh di sepanjang lapisan konvolusi internal tanpa mengalami pemutusan garis.
+
+\subsection*{Feature Fusion Head}
+Model \textbf{TopoGrad-Net} yang dibuat bekerja dengan menggabungkan dua cabang informasi paralel (\textit{dual-branch architecture}):
+\begin{enumerate}
+    \item \textbf{Cabang Visual CNN}: Citra kontur morfologi gradien ($64 \times 64 \times 1$) diproses oleh 3 blok konvolusi $[32, 64, 128]$ dengan filter konvolusi $3 \times 3$, Batch Normalization, dan aktivasi ReLU. Output konvolusi ini diubah menjadi vektor visual 128-dimensi melalui lapisan Fully Connected.
+    \item \textbf{Cabang Topologi Analitis}: CPU mengekstrak vektor fitur topologi 12-dimensi langsung dari bentuk geometri karakter.
+\end{enumerate}
+Kedua cabang ini disatukan dengan operasi konkatenasi pada kepala klasifikasi (\textit{Feature Fusion Head}) untuk membentuk vektor gabungan 140-dimensi ($128 \text{ visual} + 12 \text{ topologi}$). Penggabungan ini memberikan pelengkap geometris eksplisit yang sangat membantu model membedakan karakter dengan bentuk serupa, seperti membedakan huruf besar `O' dengan angka `0', atau huruf `c' kecil dengan `C' besar. Vektor gabungan ini kemudian dialirkan ke lapisan klasifikasi akhir dengan Dropout 0.3 dan fungsi Softmax untuk menghasilkan prediksi kelas karakter.
+
+% ----------------------------------------------------------------------------------
+% MASIH ADA LAGI… (THERE'S MORE…)
+% ----------------------------------------------------------------------------------
+\section*{MASIH ADA LAGI…}
+Bagian ini menyajikan hasil evaluasi kinerja proyek dan perbandingannya dengan model-model standar.
+
+\subsection*{Analisis Hasil Akhir dan Benchmarking}
+Kinerja akhir dari model \textbf{TopoGrad-Net} dievaluasi secara terkontrol dan dibandingkan dengan beberapa model dasar industri (ResNet-18, MobileNetV3-Large, HOG + SVM) pada dataset Chars74K. Hasil pengujian yang didapatkan dirangkum dalam Tabel \ref{tab:laporan_performa}.
+
+\begin{table}[htbp]
+\centering
+\caption{Matriks Perbandingan Performa Pengenalan Karakter Alphanumeric}
+\label{tab:laporan_performa}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Strict Acc} & \textbf{Tolerant Acc} & \textbf{Macro F1} & \textbf{Params} & \textbf{Latency} \\
+& \textbf{(\%)} & \textbf{(\%)} & & \textbf{(K)} & \textbf{(ms/img)} \\
+\midrule
+HOG + SVM & 83,39 & 89,55 & 0,7625 & N/A & 1,09 \\
+MobileNetV3-Large & 73,15 & 79,64 & 0,6890 & 4.281,2 & 0,08 \\
+ResNet-18 & 80,29 & 87,81 & 0,7510 & 11.202,0 & \textbf{0,04} \\
+Proposed\_1M (Dilated) & 84,31 & 91,18 & 0,7513 & 1.075,0 & 3,04 \\
+\textbf{TopoGrad-Net (Usulan)} & \textbf{86,25} & \textbf{92,74} & \textbf{0,7554} & \textbf{1.168,4} & 0,11 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Model \textbf{TopoGrad-Net} yang dirancang berhasil mencetak akurasi \textit{strict} tertinggi sebesar \textbf{86,25\%} dan akurasi \textit{tolerant} sebesar \textbf{92,74\%}. Model ini mampu melampaui akurasi model ResNet-18 dengan keunggulan $+5,96\%$ meskipun ukuran parameter model \textbf{89,6\% lebih kecil} (hanya 1,17M parameter dibandingkan 11,2M milik ResNet-18).
+
+\subsection*{Validasi Statistik}
+Untuk memastikan kestabilan performa model melintasi berbagai acakan inisialisasi, dilakukan pelatihan ulang model sebanyak 5 kali menggunakan \textit{random seeds} yang berbeda. Model mencatat akurasi rata-rata yang stabil pada \textbf{86,10 ± 0,90\%}. Dilakukan pula uji \textit{Paired T-test} yang mengonfirmasi bahwa penambahan fusi fitur topologi memberikan peningkatan performa yang sangat signifikan secara statistik dengan nilai $p = 0,0001 < 0,01$.
+
+\subsection*{Implementasi Perangkat Tepi}
+Model TopoGrad-Net dikonversi ke format ONNX untuk mengukur kelayakan implementasi lokal pada CPU perangkat tepi berdaya rendah. Hasil pengukuran menunjukkan model hanya membutuhkan waktu inferensi sebesar \textbf{2,30 ms per gambar} (setara dengan throughput \textbf{433,84 gambar per detik}) dengan total beban komputasi sebesar \textbf{80,01 MFLOPs} dan ukuran berkas model hanya \textbf{0,0201 MB}. Hasil ini membuktikan bahwa proyek implementasi sangat layak untuk diterapkan langsung secara lokal pada perangkat \textit{edge device}.
+
+% ----------------------------------------------------------------------------------
+% LIHAT JUGA (SEE ALSO)
+% ----------------------------------------------------------------------------------
+\section*{LIHAT JUGA}
+Bagian ini menyediakan referensi eksternal serta berkas kode proyek yang disusun dalam repositori ini.
+
+\begin{enumerate}
+    \item Dokumentasi \textit{Region Properties} pada modul \texttt{skimage.measure.regionprops} yang digunakan untuk mengekstraksi properti wilayah: \\
+    \url{https://scikit-image.org/docs/stable/api/skimage.measure.html#skimage.measure.regionprops}
+    
+    \item Referensi teoretis mengenai momen geometris Hu: \\
+    M. K. Hu, ``Visual pattern recognition by moment invariants,'' \textit{IRE Trans. Inf. Theory}, vol. 8, no. 2, pp. 179--187, 1962.
+    
+    \item Referensi mengenai filter morfologi gradien: \\
+    P. Soille, \textit{Morphological Image Analysis: Principles and Applications}, 2nd ed. Berlin, Germany: Springer, 2004.
+    
+    \item Berkas kode utama dalam proyek:
+    \begin{itemize}
+        \item Skrip utama pelatihan dan benchmarking: \\
+        \href{file:///C:/Users/bimyu/Documents/Projects/PACD/skeletonization_image_processing/super_hybrid_benchmarking.py}{\texttt{super\_hybrid\_benchmarking.py}}
+        
+        \item Modul definisi arsitektur TopoGrad-Net: \\
+        \href{file:///C:/Users/bimyu/Documents/Projects/PACD/skeletonization_image_processing/research/models.py}{\texttt{research/models.py}}
+        
+        \item Modul prapemrosesan morfologi: \\
+        \href{file:///C:/Users/bimyu/Documents/Projects/PACD/skeletonization_image_processing/research/preprocessing.py}{\texttt{research/preprocessing.py}}
+    \end{itemize}
+\end{enumerate}
+
+\end{document}

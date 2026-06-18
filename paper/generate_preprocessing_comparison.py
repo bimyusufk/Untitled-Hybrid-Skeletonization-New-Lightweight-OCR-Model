@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 # Paths
 RAW_DIR = "../datasets/raw"
-OUTPUT_PATH = "../ocr_evaluation_outputs/preprocessing_comparison.png"
+OUTPUT_PATH = "../ocr_evaluation_outputs_super_hybrid/preprocessing_comparison.png"
 IMAGE_SIZE = (64, 64)
 
 # Samples to display (Folder Name, File Name, Label)
@@ -26,12 +26,10 @@ fig, axes = plt.subplots(5, 4, figsize=(10, 15))
 for row_idx, (folder_name, img_name, label) in enumerate(samples):
     img_path = os.path.join(RAW_DIR, folder_name, img_name)
     if not os.path.exists(img_path):
-        # Fallback to check if datasets folder is at top level
         img_path = os.path.join("datasets/raw", folder_name, img_name)
         if not os.path.exists(img_path):
             img_path = os.path.join("../datasets/raw", folder_name, img_name)
             
-    # 1. Load Raw Color image, convert to RGB for Matplotlib, and Grayscale for processing
     img_color = cv2.imread(img_path, cv2.IMREAD_COLOR)
     if img_color is None:
         print(f"Failed to load image: {img_path}")
@@ -74,6 +72,10 @@ for row_idx, (folder_name, img_name, label) in enumerate(samples):
     img_skeleton = skeletonize(img_conditioned)
     img_skeleton_v = (img_skeleton * 255).astype(np.uint8)
     
+    # 5. Morphological Gradient (Kontur)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    img_grad = cv2.morphologyEx(img_conditioned_v, cv2.MORPH_GRADIENT, kernel)
+    
     # Display in row
     # Col 1: Raw
     axes[row_idx, 0].imshow(img_rgb_resized)
@@ -82,23 +84,23 @@ for row_idx, (folder_name, img_name, label) in enumerate(samples):
         axes[row_idx, 0].set_title("1. Raw Image", fontsize=12, pad=10)
     axes[row_idx, 0].text(-15, 32, f"Label: {label}", fontsize=11, fontweight='bold', va='center', ha='right')
     
-    # Col 2: Otsu
-    axes[row_idx, 1].imshow(img_biner, cmap='gray')
+    # Col 2: Clean Binary
+    axes[row_idx, 1].imshow(img_conditioned_v, cmap='gray')
     axes[row_idx, 1].axis('off')
     if row_idx == 0:
-        axes[row_idx, 1].set_title("2. Otsu Threshold", fontsize=12, pad=10)
+        axes[row_idx, 1].set_title("2. Clean Binary", fontsize=12, pad=10)
         
-    # Col 3: Hole-Filling
-    axes[row_idx, 2].imshow(img_conditioned_v, cmap='gray')
+    # Col 3: Skeletonized
+    axes[row_idx, 2].imshow(img_skeleton_v, cmap='gray')
     axes[row_idx, 2].axis('off')
     if row_idx == 0:
-        axes[row_idx, 2].set_title("3. Hole Filling (<= 35px)", fontsize=12, pad=10)
+        axes[row_idx, 2].set_title("3. Skeletonized (1px)", fontsize=12, pad=10)
         
-    # Col 4: Skeletonized
-    axes[row_idx, 3].imshow(img_skeleton_v, cmap='gray')
+    # Col 4: Morphological Gradient
+    axes[row_idx, 3].imshow(img_grad, cmap='gray')
     axes[row_idx, 3].axis('off')
     if row_idx == 0:
-        axes[row_idx, 3].set_title("4. Skeletonized (1px)", fontsize=12, pad=10)
+        axes[row_idx, 3].set_title("4. Morph. Gradient", fontsize=12, pad=10)
 
 plt.tight_layout()
 os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)

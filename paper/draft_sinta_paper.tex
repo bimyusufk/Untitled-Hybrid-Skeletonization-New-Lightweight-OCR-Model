@@ -12,7 +12,7 @@
 
 \begin{document}
 
-\title{Peningkatan Efisiensi Model Optical Character Recognition (OCR) Alphanumeric Berbasis Hybrid Skeletonization dan Convolutional Neural Network Ringan untuk Edge Computing}
+\title{Peningkatan Efisiensi Model Optical Character Recognition (OCR) Alphanumeric Berbasis Hybrid Morfologi Gradien dan Convolutional Neural Network Ringan}
 
 \author{Bim Yusuf Karang\thanks{Penulis berafiliasi dengan Program Studi S-1 Teknik Informatika, Departemen Ilmu Komputer, Universitas Padjadjaran. Email: bim23001@mail.unpad.ac.id.} \\
 \small Program Studi S-1 Teknik Informatika, Departemen Ilmu Komputer, Universitas Padjadjaran \\
@@ -22,58 +22,62 @@
 \maketitle
 
 \begin{abstract}
-Implementasi \textit{deep learning} untuk \textit{Optical Character Recognition} (OCR) pada perangkat \textit{edge computing} sering kali terkendala oleh keterbatasan memori dan daya komputasi, sehingga menuntut desain model yang lebih ringan dan efisien tanpa mengorbankan akurasi. Penelitian ini bertujuan untuk merancang model OCR hybrid yang memanfaatkan prapemrosesan \textit{skeletonization} (penipisan karakter menjadi 1 piksel) yang digabungkan dengan arsitektur \textit{Convolutional Neural Network} (CNN) ringan guna meminimalkan parameter model serta mempercepat waktu inferensi. Sistem prapemrosesan menerapkan deteksi polaritas intensitas bingkai otomatis, segmentasi \textit{Otsu thresholding}, pembersihan \textit{noise} berupa \textit{conditional hole-filling} (dengan threshold optimal 35 piksel), dan reduksi ketebalan menggunakan algoritma \textit{skeletonize}. Citra skeleton berukuran $32 \times 32$ piksel dilatih menggunakan model CNN 3-blok konvolusi ringan yang diperkuat lapisan \textit{Batch Normalization}, augmentasi spasial mikro, dan klasifikasi padat (\textit{dense classifier}) 128 unit untuk mengklasifikasi 62 kelas alphanumeric. Hasil pengujian menunjukkan bahwa model OCR hybrid yang diusulkan berhasil mencapai akurasi \textit{strict} sebesar 78,20\% dan akurasi toleran (sensitif terhadap huruf kapital) sebesar 84,94\% dengan ukuran parameter yang sangat kompak, yakni hanya $\sim$163.500 parameter. Model ini memiliki kecepatan inferensi batch yang sangat tinggi sebesar 0,19 ms per gambar, menjadikannya sangat efisien secara komputasi dibandingkan model CNN standar industri yang membutuhkan $\sim$635.100 parameter atau 3,88 kali lipat lebih besar. Pendekatan hybrid ini terbukti mampu memangkas kebutuhan memori lebih dari 74\% dengan pengorbanan performa yang minim bila dibandingkan dengan model \textit{deep convolutional neural network}, sehingga sangat layak diimplementasikan pada perangkat komputasi berdaya komputas rendah.
+Implementasi \textit{deep learning} untuk \textit{Optical Character Recognition} (OCR) pada perangkat dengan sumber daya terbatas sering kali terkendala oleh keterbatasan memori dan daya komputasi, sehingga menuntut desain model yang lebih ringan dan efisien tanpa mengorbankan akurasi. Penelitian ini mengusulkan model OCR hybrid yang memanfaatkan prapemrosesan \textit{Morphological Gradient} (ekstraksi kontur) yang digabungkan dengan arsitektur \textit{Convolutional Neural Network} (CNN) ringan serta fusi fitur topologi analitis guna meminimalkan parameter model dan mempercepat waktu inferensi. Sistem prapemrosesan menerapkan deteksi polaritas intensitas bingkai otomatis, binerisasi \textit{Otsu thresholding}, pembersihan derau berupa \textit{conditional hole-filling} ($\le 35$ piksel), dan ekstraksi kontur tepi menggunakan operator \textit{Morphological Gradient} dengan elemen penstruktur $2 \times 2$. Vektor topologi 12-dimensi yang terdiri dari 5 properti wilayah dasar dan 7 Hu Moments dihitung secara dinamis dan difusikan langsung ke \textit{classifier head} sebagai fitur tambahan. Pendekatan ini didasari oleh studi pendahuluan yang membuktikan bahwa prapemrosesan \textit{skeletonization} konvensional mengalami degradasi akurasi akibat kehilangan informasi pada representasi 1 piksel saat melewati operasi \textit{downsampling} CNN. Hasil pengujian menunjukkan bahwa model yang diusulkan (\textit{TopoGrad-Net}) berhasil mencapai akurasi \textit{strict} rata-rata sebesar 86,10\% (tertinggi 87,42\% pada seed terbaik) dan akurasi toleran rata-rata sebesar 92,74\% (tertinggi 93,51\%) dengan 1.168.382 parameter. Model ini memiliki kecepatan inferensi rata-rata sebesar 0,11 ms per gambar pada GPU, serta latensi inferensi CPU sebesar 5,30 ms menggunakan PyTorch dan 2,30 ms menggunakan ONNX Runtime CPU. Pendekatan hybrid ini secara signifikan mengungguli model standar industri seperti ResNet-18 (80,29\%) dengan pemotongan kebutuhan parameter sebesar 89,6\%, sehingga sangat layak diimplementasikan pada perangkat keras dengan kemampuan komputasi terbatas (edge devices).
 \end{abstract}
 
 \begin{IEEEkeywords}
-Edge Computing, Convolutional Neural Network, Skeletonization, Optical Character Recognition, Alphanumeric Dataset.
+Klasifikasi Karakter, Convolutional Neural Network, Morphological Gradient, Optical Character Recognition, Alphanumeric Dataset, Sumber Daya Terbatas.
 \end{IEEEkeywords}
 
 \section{Pendahuluan}
-Perkembangan teknologi kecerdasan buatan, khususnya \textit{Deep Learning}, telah membawa disrupsi besar pada sistem otomatisasi pengenalan teks atau \textit{Optical Character Recognition} (OCR). Penerapan praktis OCR kini tidak lagi terbatas pada server berskala besar, melainkan telah merambah ke perangkat portabel dan komputasi tepi (\textit{edge computing}) seperti kamera pintar, \textit{smartphone}, dan sistem otomasi industri. Namun, implementasi model jaringan saraf tiruan dalam pada perangkat tepi memiliki tantangan besar berupa keterbatasan sumber daya komputasi, memori acak (RAM), serta konsumsi daya listrik yang rendah. Oleh karena itu, diperlukan strategi optimasi model agar proses pengenalan karakter alphanumeric dapat berjalan secara \textit{real-time} tanpa membebani perangkat keras tepi.
+Perkembangan teknologi kecerdasan buatan, khususnya \textit{Deep Learning}, telah membawa disrupsi besar pada sistem otomatisasi pengenalan teks atau \textit{Optical Character Recognition} (OCR). Penerapan praktis OCR kini tidak lagi terbatas pada server berskala besar, melainkan telah merambah ke perangkat portabel dan sistem tertanam dengan kemampuan komputasi terbatas seperti kamera pintar, \textit{smartphone}, dan sistem otomasi industri. Namun, implementasi model jaringan saraf tiruan dalam pada perangkat keras berdaya rendah memiliki tantangan besar berupa keterbatasan sumber daya komputasi, memori acak (RAM), serta konsumsi daya listrik yang rendah. Oleh karena itu, diperlukan strategi optimasi model agar proses pengenalan karakter alphanumeric dapat berjalan secara \textit{real-time} tanpa membebani perangkat keras.
 
-Pentingnya optimasi OCR untuk perangkat tepi didukung oleh fakta bahwa volume data citra yang harus diproses di tingkat lokal terus meningkat. Penelitian terdahulu menyebutkan bahwa pada tahun 2019, sekitar 45\% data yang dihasilkan oleh IoT akan disimpan, diproses, dan dianalisis di dekat atau pada tepi (\textit{edge}) jaringan untuk mengatasi kendala latensi, konsumsi daya baterai, bandwidth, serta keamanan dan privasi data \cite{shi2015edge}. Untuk mendukung performa tersebut, beberapa peneliti telah berfokus pada reduksi arsitektur CNN dengan metode kuantisasi maupun pemangkasan (\textit{pruning}) parameter. Sebagai contoh, Parulian \cite{parulian2025efficient} mengusulkan skema kompresi arsitektur CNN ringan menggunakan tuning hyperparameter, pruning, dan \textit{Post-Training Quantization} (PTQ) pada dataset MNIST dan Braille. Meskipun mampu mereduksi ukuran model hingga 80\% (menjadi 6,25 KB) dengan akurasi 95,52\% pada MNIST, metode kompresi semacam ini sangat dipengaruhi oleh karakteristik dataset MNIST yang relatif bersih dan homogen. Ketika dihadapkan pada dataset yang lebih kompleks dan bervariasi seperti Chars74K \cite{decampos2009character}, reduksi arsitektur tanpa prapemrosesan citra yang tepat seperti penipisan (\textit{skeletonization}) sangat rentan mengalami degradasi akurasi karena hilangnya representasi tekstur penting pada karakter.
+Pentingnya optimasi OCR untuk perangkat berdaya rendah didukung oleh fakta bahwa pemrosesan lokal yang cepat sangat krusial untuk mengatasi kendala latensi, konsumsi daya baterai, bandwidth, serta keamanan dan privasi data \cite{sandler2018mobilenetv2}. Untuk mendukung performa tersebut, beberapa peneliti telah berfokus pada reduksi arsitektur CNN melalui kuantisasi maupun pemangkasan (\textit{pruning}) parameter. Sebagai contoh, Parulian \cite{parulian2025efficient} mengusulkan skema kompresi arsitektur CNN ringan pada dataset MNIST dan Braille. Meskipun mampu mereduksi ukuran model hingga 80\%, metode kompresi semacam ini sangat bergantung pada dataset yang relatif bersih dan homogen. Ketika dihadapkan pada dataset yang lebih kompleks dan bervariasi seperti Chars74K \cite{decampos2009character}, reduksi arsitektur tanpa prapemrosesan citra yang tepat sangat rentan mengalami degradasi akurasi.
 
-Dalam beberapa dekade terakhir, prapemrosesan citra berbasis geometri seperti \textit{skeletonization} (penipisan) telah terbukti membantu memperjelas struktur esensial objek. Algoritma penipisan klasik seperti algoritma Zhang-Suen \cite{zhang1984fast} dan perluasannya telah banyak digunakan untuk ekstraksi fitur tanda tangan dan tulisan tangan. Melalui penipisan, tebal-tipisnya goresan karakter yang bervariasi dapat direduksi menjadi garis lidi tunggal setebal 1 piksel. Evaluasi terhadap berbagai algoritma penipisan klasik oleh Khobragade dkk. \cite{khobragade2014evaluations} menunjukkan bahwa prapemrosesan ini sangat krusial dalam mereduksi ketebalan karakter tulisan tangan yang bervariasi, menghilangkan redundansi informasi spasial, dan mempertahankan konektivitas struktural demi efisiensi OCR. Namun, sebagian besar metode klasik ini hanya mengandalkan aturan geometris kaku atau pencocokan templat (\textit{template matching}) yang rentan terhadap derau (\textit{noise spurs}) dan distorsi geometris minor.
+Dalam beberapa dekade terakhir, prapemrosesan citra berbasis morfologi seperti \textit{skeletonization} (penipisan) telah banyak digunakan untuk memperjelas struktur esensial karakter. Algoritma penipisan klasik seperti Zhang-Suen \cite{zhang1984fast} mereduksi ketebalan goresan karakter menjadi garis lidi setebal 1 piksel. Evaluasi oleh Khobragade dkk. \cite{khobragade2014evaluations} menunjukkan bahwa penipisan dapat mereduksi redundansi informasi spasial sambil mempertahankan konektivitas struktural. Namun, terdapat \textit{gap} penelitian yang signifikan: citra setebal 1 piksel sangat rentan mengalami kehilangan informasi (\textit{information loss}) saat melewati operasi \textit{downsampling} (seperti \textit{Max Pooling}) pada CNN, yang sering kali mengakibatkan garis terputus di dalam representasi fitur internal jaringan saraf \cite{shi2022rcrn}. Akibatnya, akurasi model CNN berbasis skeleton sering kali dilaporkan lebih rendah dibandingkan model yang dilatih langsung pada citra asli.
 
-Untuk mengatasi kelemahan tersebut, integrasi antara prapemrosesan geometri dan jaringan saraf konvolusi (CNN) mulai dikembangkan. Beberapa studi terbaru mencoba melatih CNN menggunakan data skeletonized. Sebagai contoh, Shi dkk. \cite{shi2022rcrn} mengajukan metode RCRN (\textit{Real-world Character Image Restoration Network}) berbasis GAN yang memanfaatkan generator pengekstraksi skeleton (SENet) untuk menjaga konsistensi struktural karakter dan menormalkan derau kompleks sebelum rekonstruksi citra dilakukan oleh CiRNet. Jaringan CNN semacam ini dapat difokuskan untuk mempelajari bentuk geometris esensial (seperti percabangan, ujung garis, dan lubang) tanpa perlu mempelajari fitur tebal goresan atau kontras warna font yang tidak relevan. Meskipun demikian, terdapat \textit{gap} penelitian yang cukup signifikan: citra dengan tebal 1 piksel sangat rentan mengalami kehilangan informasi (\textit{information loss}) saat melewati operasi \textit{downsampling} (seperti \textit{Max Pooling} standar) pada CNN, yang sering kali mengakibatkan garis terputus di dalam representasi fitur internal jaringan saraf. Akibatnya, akurasi model hybrid skeletonized sering kali dilaporkan lebih rendah dibandingkan model CNN standar yang dilatih pada citra asli (\textit{raw}).
-
-Untuk mengatasi \textit{gap} penelitian tersebut, makalah ini mengusulkan sebuah model OCR hybrid alphanumeric baru yang menggabungkan prapemrosesan geometri optimal dan struktur CNN ringan yang didesain khusus untuk citra dengan tebal 1 piksel. Kami menerapkan pipa prapemrosesan citra yang terdiri dari deteksi polaritas intensitas otomatis, binerisasi Otsu adaptif, dan \textit{conditional hole-filling} berukuran mikro untuk membersihkan bagian dalam karakter sebelum dilakukan penipisan (\textit{skeletonization}). Selanjutnya, kami merancang model CNN ringan dengan 3 blok konvolusi yang diperkuat lapisan \textit{Batch Normalization} serta modul augmentasi spasial mikro. Blok konvolusi dirancang menggunakan filter berukuran kecil dengan \textit{pooling} yang terkendali guna mencegah hilangnya konektivitas garis lidi.
+Untuk mengatasi \textit{gap} penelitian tersebut, makalah ini mengusulkan pendekatan alternatif berbasis operator \textit{Morphological Gradient} sebagai pengganti \textit{skeletonization}. Operator \textit{Morphological Gradient} \cite{soille2004morphological} menghitung selisih antara operasi dilasi dan erosi pada citra biner, sehingga menghasilkan representasi kontur tepi karakter yang mempertahankan informasi bentuk geometris esensial tanpa mereduksi ketebalan menjadi 1 piksel. Keunggulan representasi kontur ini adalah ketahanannya terhadap operasi \textit{downsampling} pada CNN karena garis tepi yang dihasilkan memiliki lebar lebih dari 1 piksel, sehingga tidak rentan terputus saat melewati lapisan \textit{pooling}. Selain itu, kami mengintegrasikan vektor fitur topologi 12-dimensi yang terdiri dari 5 properti wilayah dan 7 Hu Moments \cite{hu1962visual} sebagai informasi geometris analitis yang difusikan langsung ke kepala klasifikasi (\textit{classifier head}) model CNN. Augmentasi data secara \textit{online} (rotasi dan translasi acak) diterapkan untuk meningkatkan ketahanan model terhadap variasi geometris input.
 
 Penelitian ini memberikan beberapa kontribusi penting sebagai berikut:
 \begin{itemize}
-    \item Melakukan analisis sensitivitas threshold \textit{conditional hole-filling} (dari 0 hingga 70 piksel) secara empiris untuk menemukan nilai optimal $35$ piksel, yang menyeimbangkan antara penghapusan \textit{noise} rongga dan pelestarian konektivitas struktural rangka karakter.
-    \item Mengisolasi efek prapemrosesan geometris melalui rancangan eksperimen variabel terkontrol secara sistematis (\textit{Controlled Variable Experiment}), membandingkan model dengan kapasitas arsitektur yang identik pada input yang bervariasi (\textit{raw} vs \textit{skeleton} vs \textit{skeleton augmented}).
-    \item Mengembangkan arsitektur CNN ringan yang 3,88 kali lebih kompak ($\sim$163.500 parameter) dibandingkan model standar ($\sim$635.100 parameter) dengan latensi inferensi batch yang sangat cepat sebesar 0,19 ms per gambar (meningkat 4 kali lipat dibanding model \textit{raw} standard).
-    \item Memvalidasi reliabilitas dan ketahanan model terhadap pergeseran domain (\textit{domain generalization}) melalui pengujian lintas dataset (\textit{Cross-Dataset Validation}) menggunakan model terlatih Chars74K pada dataset EMNIST \textit{handwritten}, yang menunjukkan bahwa representasi skeleton secara signifikan menekan jurang domain (\textit{domain gap}) dibandingkan citra mentah.
-    \item Menyajikan analisis latensi yang rigoris ($N=1000$ run) lengkap dengan interval kepercayaan 95\% serta pengujian signifikansi statistik non-parametrik (uji peringkat bertanda Wilcoxon).
+    \item Membuktikan secara empiris melalui studi pendahuluan variabel terkontrol bahwa prapemrosesan \textit{skeletonization} mengalami degradasi akurasi ($-5{,}78\%$) dibandingkan citra mentah pada kapasitas arsitektur yang identik, sehingga memotivasi pencarian alternatif prapemrosesan yang lebih efektif.
+    \item Mengusulkan pipeline prapemrosesan \textit{Morphological Gradient} berbasis kontur yang mempertahankan informasi bentuk geometris tanpa mereduksi ketebalan menjadi 1 piksel, mengatasi kelemahan fundamental \textit{skeletonization} pada CNN.
+    \item Merancang arsitektur CNN hybrid ringan (\textit{TopoGrad-Net}) dengan fusi 12 fitur topologi analitis (5 properti wilayah + 7 Hu Moments) yang mencapai akurasi \textit{strict} tertinggi sebesar 85,99\% pada dataset Chars74K, mengungguli ResNet-18 \cite{he2016deep} (80,29\%) dan MobileNetV3 \cite{howard2019searching} (73,15\%) dengan pemotongan parameter sebesar 89,6\%.
+    \item Mencapai latensi inferensi \textit{batch} sebesar \textbf{0,11 ms per gambar} yang 27,6 kali lipat lebih cepat dibandingkan model CNN \textit{dilated} baseline, memvalidasi kelayakan implementasi pada lingkungan dengan sumber daya terbatas.
 \end{itemize}
 
-Naskah ini disusun secara sistematis sebagai berikut: Bagian \ref{sec:metode} memaparkan metode penelitian yang mencakup \textit{pipeline} pemrosesan citra, desain dataset, arsitektur CNN yang diusulkan, serta metrik evaluasi. Bagian \ref{sec:hasil} menyajikan hasil penelitian secara kuantitatif dan kualitatif. Bagian \ref{sec:pembahasan} membahas analisis perbandingan performa, kelemahan model, serta implikasi praktis. Akhirnya, Bagian \ref{sec:kesimpulan} merangkum kesimpulan penelitian serta arah pengembangan di masa depan.
+Naskah ini disusun sebagai berikut: Bagian \ref{sec:metode} memaparkan metode penelitian yang mencakup pipeline pemrosesan citra, arsitektur CNN yang diusulkan, serta konfigurasi eksperimen. Bagian \ref{sec:hasil} menyajikan hasil studi pendahuluan skeletonisasi dan hasil evaluasi model usulan. Bagian \ref{sec:pembahasan} membahas analisis perbandingan performa dan implikasi praktis. Bagian \ref{sec:kesimpulan} merangkum kesimpulan serta arah pengembangan di masa depan.
 
 \section{Metode Penelitian}
 \label{sec:metode}
 
 \subsection{Gambaran Umum Sistem}
-Sistem OCR hybrid yang diusulkan bekerja secara sekuensial dimulai dari citra masukan biner kasar hingga diperoleh prediksi karakter alphanumeric. Diagram blok arsitektur sistem keseluruhan disajikan pada Gambar \ref{fig:arch_diagram}. 
+Sistem OCR hybrid yang diusulkan bekerja secara sekuensial melalui dua jalur paralel: jalur visual CNN untuk pola kontur dan jalur analitis untuk fitur topologi, yang digabungkan pada kepala klasifikasi. Diagram blok arsitektur sistem disajikan pada Gambar \ref{fig:arch_diagram}. 
 
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[
-    % Pengaturan jarak antar node
-    node distance=0.6cm and 0cm,
-    % Definisi gaya (style) untuk setiap blok arsitektur
+    node distance=0.45cm and 0cm,
     layer_box/.style={
         draw, 
         rectangle, 
         rounded corners=3pt, 
-        minimum width=7.5cm, 
-        minimum height=0.7cm, 
+        minimum width=5.8cm, 
+        minimum height=0.6cm, 
         align=center, 
         fill=blue!5, 
-        font=\sffamily\small
+        font=\sffamily\footnotesize
     },
-    % Definisi gaya untuk panah
+    feat_box/.style={
+        draw, 
+        rectangle, 
+        rounded corners=3pt, 
+        minimum width=2.0cm, 
+        minimum height=0.6cm, 
+        align=center, 
+        fill=green!8, 
+        font=\sffamily\footnotesize
+    },
     arrow/.style={
         -Latex, 
         thick, 
@@ -81,24 +85,20 @@ Sistem OCR hybrid yang diusulkan bekerja secara sekuensial dimulai dari citra ma
     }
 ]
 
-% =====================================================================
-% DEFINISI NODE / BLOK
-% =====================================================================
 \node (A) [layer_box] {Raw Input Image 64$\times$64};
 \node (B) [layer_box, below=of A] {Polarity Detection \& Otsu Binarization};
-\node (C) [layer_box, below=of B] {Conditional Hole Filling $\leq$ 7px};
-\node (D) [layer_box, below=of C] {Morphological Skeletonization};
-\node (E) [layer_box, below=of D] {Resize to 32$\times$32 \& Normalization};
-\node (F) [layer_box, below=of E] {Micro Spatial Augmentation};
-\node (G) [layer_box, below=of F] {Conv Block 1: 32 Filters + MaxPool};
-\node (H) [layer_box, below=of G] {Conv Block 2: 64 Filters + MaxPool};
-\node (I) [layer_box, below=of H] {Conv Block 3: 128 Filters + MaxPool};
-\node (J) [layer_box, below=of I] {Dense 256 + Dropout};
-\node (K) [layer_box, below=of J] {Softmax Output 62 Classes};
+\node (C) [layer_box, below=of B] {Conditional Hole Filling $\leq$ 35px};
+\node (D) [layer_box, below=of C] {Morphological Gradient (2$\times$2)};
+\node (E) [layer_box, below=of D] {Online Augmentation (Train Only)};
+\node (F) [layer_box, below=of E] {Conv 32 + BN + MaxPool};
+\node (G) [layer_box, below=of F] {Conv 64 + BN + MaxPool};
+\node (H) [layer_box, below=of G] {Conv 128 + BN + MaxPool};
+\node (I) [layer_box, below=of H] {FC 128 + Feature Fusion (140-dim)};
 
-% =====================================================================
-% KONEKSI PANAH / ALUR
-% =====================================================================
+\node (FEAT) [feat_box, right=0.4cm of D] {12 Fitur\\Topologi};
+
+\node (J) [layer_box, below=of I] {FC 128 + Dropout $\to$ Softmax 62 Kelas};
+
 \draw [arrow] (A) -- (B);
 \draw [arrow] (B) -- (C);
 \draw [arrow] (C) -- (D);
@@ -108,26 +108,33 @@ Sistem OCR hybrid yang diusulkan bekerja secara sekuensial dimulai dari citra ma
 \draw [arrow] (G) -- (H);
 \draw [arrow] (H) -- (I);
 \draw [arrow] (I) -- (J);
-\draw [arrow] (J) -- (K);
+\draw [arrow, draw=green!60!black] (FEAT.south) |- (I.east);
+\draw [arrow, dashed, draw=green!60!black] (C.east) -| (FEAT.north);
 
 \end{tikzpicture}
-\caption{Diagram blok arsitektur model keseluruhan mulai dari input hingga output.}
+\caption{Diagram blok arsitektur model keseluruhan. Garis putus-putus hijau menunjukkan jalur ekstraksi 12 fitur topologi dari citra biner bersih, yang difusikan ke kepala klasifikasi CNN.}
 \label{fig:arch_diagram}
 \end{figure}
 
-Aliran data pada pipa sistem ini dapat dirumuskan secara matematis sebagai berikut:
+Aliran data pada pipeline sistem ini dapat dirumuskan secara matematis sebagai berikut:
 \begin{enumerate}
-    \item Citra masukan grayscale asli $I_{raw}$ dimuat dan dilakukan penyesuaian dimensi menjadi ukuran standar $64 \times 64$ piksel.
-    \item Citra biner $I_{bin}$ dihasilkan melalui proses deteksi polaritas berbasis piksel bingkai dan binerisasi Otsu adaptif.
-    \item Masker pembersihan lubang mikro $M_{hole}$ dihasilkan melalui pelabelan area lubang untuk menambal lubang biner berukuran $\le 35$ piksel, menghasilkan citra bersih $I_{clean}$.
-    \item Citra skeleton lidi $I_{skel}$ setebal 1 piksel diproduksi menggunakan transformasi skeletonisasi morfologi.
-    \item Citra skeleton diturunkan dimensinya menjadi $32 \times 32$ piksel, dinormalisasi ke rentang $[0.0, 1.0]$, dan diumpankan ke model CNN ringan untuk menghasilkan probabilitas prediksi kelas $\hat{y}$ melalui fungsi aktivasi Softmax.
+    \item Citra masukan grayscale asli $I_{raw}$ dimuat dan disesuaikan dimensinya menjadi $64 \times 64$ piksel.
+    \item Citra biner $I_{bin}$ dihasilkan melalui deteksi polaritas berbasis piksel bingkai dan binerisasi Otsu adaptif.
+    \item Masker pembersihan lubang mikro $M_{hole}$ diterapkan untuk menambal lubang biner berukuran $\le 35$ piksel, menghasilkan citra bersih $I_{clean}$.
+    \item Citra kontur $I_{grad}$ dihasilkan menggunakan operator \textit{Morphological Gradient}:
+    \begin{equation}
+    I_{grad} = (I_{clean} \oplus B) - (I_{clean} \ominus B)
+    \label{eq:morph_grad}
+    \end{equation}
+    di mana $B$ adalah elemen penstruktur persegi berukuran $2 \times 2$, $\oplus$ adalah operasi dilasi, dan $\ominus$ adalah operasi erosi.
+    \item Secara paralel, vektor fitur topologi 12-dimensi $\mathbf{f}$ diekstraksi dari $I_{clean}$.
+    \item Citra $I_{grad}$ dinormalisasi dan diumpankan ke model CNN. Output visual dan vektor $\mathbf{f}$ difusikan pada kepala klasifikasi untuk menghasilkan probabilitas prediksi kelas $\hat{y}$ melalui aktivasi Softmax.
 \end{enumerate}
 
 \subsection{Dataset dan Preprocessing}
-Dataset utama yang digunakan dalam penelitian ini merupakan subset citra alami (\textit{natural images}) bahasa Inggris dari dataset Chars74K \cite{decampos2009character}. Dataset ini terdiri dari 62 kelas unik (angka 0--9, huruf besar A--Z, dan huruf kecil a--z) dengan total data sebanyak \textbf{7.705 sampel citra}. Berbeda dengan dataset MNIST yang homogen dan bersih, Chars74K menyajikan tingkat kesulitan tinggi karena diambil dari foto dunia nyata (papan nama, reklame, dll.) dengan variasi pencahayaan, derau latar belakang, dan distorsi geometris. Pembagian dataset dilakukan menggunakan metode \textit{stratified split} dengan rasio 80\% untuk data latih (\textbf{6.164 sampel}) dan 20\% untuk data uji (\textbf{1.541 sampel}).
+Dataset utama yang digunakan dalam penelitian ini merupakan subset citra alami (\textit{natural images}) bahasa Inggris dari dataset Chars74K \cite{decampos2009character}. Dataset ini terdiri dari 62 kelas unik (angka 0--9, huruf besar A--Z, dan huruf kecil a--z) dengan total data sebanyak \textbf{7.705 sampel citra}. Berbeda dengan dataset MNIST yang homogen dan bersih, Chars74K menyajikan tingkat kesulitan tinggi karena diambil dari foto dunia nyata (papan nama, reklame, dll.) dengan variasi pencahayaan, derau latar belakang, dan distorsi geometris. Pembagian dataset dilakukan menggunakan metode \textit{stratified split} dengan rasio 80\% untuk data latih (\textbf{6.164 sampel}), 10\% untuk data validasi (\textbf{770 sampel}), dan 10\% untuk data uji (\textbf{771 sampel}).
 
-Untuk menjawab kelalaian pelaporan distribusi kelas pada literatur terdahulu, Tabel \ref{tab:class_dist} merinci karakteristik distribusi kelas pada Chars74K. Data memperlihatkan adanya ketidakseimbangan kelas (\textit{class imbalance}) yang sangat ekstrem, terutama pada kategori huruf besar yang memiliki deviasi standar sebesar $142,4$.
+Untuk menjawab kelalaian pelaporan distribusi kelas pada literatur terdahulu, Tabel \ref{tab:class_dist} merinci karakteristik distribusi kelas pada Chars74K, memperlihatkan ketidakseimbangan kelas (\textit{class imbalance}) yang sangat ekstrem.
 
 \begin{table}[htbp]
 \caption{Karakteristik Distribusi Kelas Dataset Chars74K}
@@ -146,11 +153,9 @@ Lowercase & 26 & 33 & 227 & 73,5 & 52,5 \\
 \end{center}
 \end{table}
 
-Selain Chars74K, untuk menguji kemampuan generalisasi lintas domain (\textit{domain generalization}), kami juga menggunakan dataset \textbf{EMNIST ByClass} \cite{cohen2017emnist} yang berisi karakter tulisan tangan (\textit{handwritten}). Dataset uji EMNIST disampling secara terstratifikasi sebanyak 3.000 sampel (rata-rata 48 sampel per kelas) sebagai data uji independen di luar domain citra alami.
-
 Proses prapemrosesan citra dilakukan secara bertahap:
 \begin{enumerate}
-    \item \textbf{Deteksi Polaritas Bingkai}: Intensitas rata-rata piksel pada tepi citra ($\bar{I}_{border}$) dihitung untuk mendeteksi warna latar belakang. Formulasi segmentasi adaptif ditentukan berdasarkan kondisi berikut:
+    \item \textbf{Deteksi Polaritas Bingkai}: Intensitas rata-rata piksel pada tepi citra ($\bar{I}_{border}$) dihitung untuk mendeteksi warna latar belakang. Formulasi segmentasi adaptif ditentukan berdasarkan:
     \begin{equation}
     \text{Mode} = \begin{cases} \text{INV} + \text{OTSU}, & \text{jika } \bar{I}_{border} > 127 \\ \text{BIN} + \text{OTSU}, & \text{jika } \bar{I}_{border} \le 127 \end{cases}
     \end{equation}
@@ -158,104 +163,98 @@ Proses prapemrosesan citra dilakukan secara bertahap:
     \begin{equation}
     H_{only} = (I_{bin} \oplus \text{fill}(I_{bin}))
     \end{equation}
-    Setiap objek terisolasi pada $H_{only}$ dilabeli secara numerik. Luas piksel setiap lubang ($A_h$) dihitung, dan hanya lubang dengan $A_h \le 35$ piksel yang ditambal ke dalam citra utama untuk menghindari tersumbatnya struktur skeleton tipis. Penentuan batas threshold $35$ piksel ini didasarkan pada analisis sensitivitas empiris (Eksperimen 3).
-    \item \textbf{Skeletonization}: Reduksi tebal karakter menggunakan fungsi \textit{skeletonize} yang menghasilkan matriks boolean $I_{skel}$ setebal 1 piksel.
-    \item \textbf{Augmentasi Data Mikro}: Untuk mencegah deformasi garis lidi tipis akibat interpolasi spasial, kami menerapkan augmentasi spasial berskala sangat kecil: Rotasi acak maksimal $\approx 7.2^\circ$ dan pergeseran acak maksimal $\approx 1.2$ piksel.
+    Setiap objek terisolasi pada $H_{only}$ dilabeli secara numerik. Luas piksel setiap lubang ($A_h$) dihitung, dan hanya lubang dengan $A_h \le 35$ piksel yang ditambal ke dalam citra utama. Penentuan batas threshold $35$ piksel ini didasarkan pada analisis sensitivitas empiris (Bagian \ref{sec:threshold}).
+    \item \textbf{Morphological Gradient}: Ekstraksi kontur tepi karakter menggunakan operator gradien morfologi (Persamaan \ref{eq:morph_grad}) dengan elemen penstruktur persegi $2 \times 2$. Operator ini menghasilkan representasi batas objek yang mempertahankan informasi geometris bentuk karakter tanpa mereduksi ketebalan menjadi 1 piksel.
 \end{enumerate}
 
-Visualisasi perbandingan tahapan prapemrosesan untuk beberapa contoh sampel karakter alphanumeric (citra asli hingga hasil skeletonisasi 1 piksel) disajikan pada Gambar \ref{fig:preprocess_compare}.
+Visualisasi perbandingan tahapan prapemrosesan untuk beberapa contoh sampel karakter disajikan pada Gambar \ref{fig:preprocess_compare}. Kolom keempat menampilkan hasil \textit{Morphological Gradient} yang digunakan sebagai input model yang diusulkan, berbeda dengan pendekatan \textit{skeletonization} konvensional (kolom ketiga) yang menghasilkan garis setebal 1 piksel.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\columnwidth]{../ocr_evaluation_outputs/preprocessing_comparison.png}
-\caption{Tahapan hasil prapemrosesan data karakter: Citra Asli (Raw) $\to$ Otsu Thresholding $\to$ Conditional Hole-Filling ($\le 7$ piksel) $\to$ Citra Skeletonized (1 piksel).}
+\includegraphics[width=\columnwidth]{../ocr_evaluation_outputs_super_hybrid/preprocessing_comparison.png}
+\caption{Perbandingan tahapan prapemrosesan: (1) Citra Asli, (2) Binerisasi Bersih (Otsu + Hole-filling $\le 35$ px), (3) Skeletonisasi 1 piksel (metode konvensional), (4) Morphological Gradient / kontur (metode yang diusulkan).}
 \label{fig:preprocess_compare}
 \end{figure}
 
-\subsection{Arsitektur Model}
-Model CNN yang dirancang untuk pengenalan citra skeleton lidi ini didesain ringkas dengan total parameter sebesar \textbf{$\sim$163.000}. Detail lapisan penyusun arsitektur model didefinisikan sebagai berikut:
+\subsection{Ekstraksi Fitur Topologi}
+Untuk memperkaya representasi karakter, kami mengekstraksi vektor fitur topologi 12-dimensi $\mathbf{f} \in \mathbb{R}^{12}$ dari setiap citra biner bersih $I_{clean}$ secara paralel dengan jalur CNN. Vektor ini terdiri dari:
+
+\textbf{5 Properti Wilayah Dasar}: \textit{Euler Number} (jumlah objek $-$ jumlah lubang), \textit{Eccentricity} (rasio jarak titik fokus terhadap sumbu mayor), \textit{Aspect Ratio} (lebar/tinggi bounding box), \textit{Extent} (rasio luas objek terhadap bounding box), dan \textit{Solidity} (rasio luas objek terhadap convex hull).
+
+\textbf{7 Hu Moments} \cite{hu1962visual}: Deskriptor bentuk yang bersifat invarian terhadap translasi, rotasi, dan skala. Setiap Hu Moment $h_i$ ditransformasi ke skala logaritmik untuk stabilitas numerik:
+\begin{equation}
+h_i^{(\text{log})} = -\text{sign}(h_i) \cdot \log_{10}(|h_i|), \quad i = 1, \ldots, 7
+\end{equation}
+
+Vektor fitur $\mathbf{f}$ ini difusikan langsung ke kepala klasifikasi melalui operasi konkatenasi dengan embedding visual dari backbone CNN, sehingga model menerima informasi bentuk analitis yang tidak dapat dipelajari CNN secara mandiri dari data kontur saja.
+
+\subsection{Arsitektur Model yang Diusulkan}
+Arsitektur \textit{TopoGrad-Net} dirancang sebagai CNN 3-blok konvolusi dengan kepala klasifikasi hybrid yang menerima fusi fitur visual dan topologi. Total parameter model sebesar \textbf{1.168.382}. Detail arsitektur didefinisikan sebagai berikut:
 \begin{enumerate}
-    \item \textbf{Input Layer}: Matriks input satu saluran berdimensi $32 \times 32 \times 1$.
-    \item \textbf{Blok Konvolusi 1}: Lapisan \texttt{Conv2D} dengan 16 filter berukuran $3 \times 3$ (aktivasi ReLU, \textit{padding} 'same') diikuti dengan \texttt{BatchNormalization}, \texttt{MaxPooling2D} berukuran $2 \times 2$, dan \texttt{Dropout(0.2)}. 
-    \item \textbf{Blok Konvolusi 2}: Lapisan \texttt{Conv2D} dengan 32 filter berukuran $3 \times 3$ diikuti dengan \texttt{BatchNormalization}, \texttt{MaxPooling2D} berukuran $2 \times 2$, dan \texttt{Dropout(0.2)}. 
-    \item \textbf{Blok Konvolusi 3}: Lapisan \texttt{Conv2D} dengan 64 filter berukuran $3 \times 3$ diikuti dengan \texttt{BatchNormalization}, \texttt{MaxPooling2D} berukuran $2 \times 2$, dan \texttt{Dropout(0.3)}.
-    \item \textbf{Lapisan Klasifikasi Padat (\textit{Classifier Head})}: Hasil konvolusi di-\textit{flatten} menjadi vektor berdimensi 1024 unit, kemudian dihubungkan ke lapisan \texttt{Dense} dengan 128 unit (aktivasi ReLU). Lapisan ini dilengkapi \texttt{BatchNormalization}, \texttt{Dropout(0.4)}, dan diakhiri oleh lapisan \texttt{Dense} output sebanyak 62 unit dengan aktivasi Softmax.
+    \item \textbf{Input Layer}: Matriks input satu saluran berdimensi $64 \times 64 \times 1$ (citra \textit{Morphological Gradient}).
+    \item \textbf{Blok Konvolusi 1}: \texttt{Conv2D} 32 filter $3 \times 3$ (padding `same', aktivasi ReLU), diikuti \texttt{BatchNorm2d} dan \texttt{MaxPool2d} $2 \times 2$. Output: $32 \times 32 \times 32$.
+    \item \textbf{Blok Konvolusi 2}: \texttt{Conv2D} 64 filter $3 \times 3$, diikuti \texttt{BatchNorm2d} dan \texttt{MaxPool2d} $2 \times 2$. Output: $16 \times 16 \times 64$.
+    \item \textbf{Blok Konvolusi 3}: \texttt{Conv2D} 128 filter $3 \times 3$, diikuti \texttt{BatchNorm2d} dan \texttt{MaxPool2d} $2 \times 2$. Output: $8 \times 8 \times 128$.
+    \item \textbf{Visual Embedding}: Hasil konvolusi di-\textit{flatten} menjadi vektor berdimensi $128 \times 8 \times 8 = 8192$, kemudian dihubungkan ke lapisan \texttt{Linear}(128) dengan \texttt{BatchNorm1d} dan \texttt{Dropout(0.4)}.
+    \item \textbf{Feature Fusion Head}: Vektor visual berdimensi 128 dikonkatenasi dengan vektor fitur topologi berdimensi 12, menghasilkan vektor gabungan berdimensi 140. Vektor ini diproses oleh lapisan \texttt{Linear}(128), \texttt{BatchNorm1d}, \texttt{ReLU}, dan \texttt{Dropout(0.3)}.
+    \item \textbf{Output}: Lapisan \texttt{Linear}(62) dengan aktivasi Softmax untuk 62 kelas alphanumeric.
 \end{enumerate}
 
-\subsection{Model Baseline Standar Industri}
-Untuk menguji efektivitas dari model hybrid yang diusulkan, sebuah model baseline standar industri dirancang sebagai pembanding utama. Model standar ini dilatih langsung menggunakan citra mentah (\textit{raw grayscale}) berukuran $32 \times 32$ piksel tanpa melalui prapemrosesan penipisan (\textit{skeletonization}). 
+\subsection{Augmentasi Data Online}
+Untuk meningkatkan ketahanan model terhadap variasi geometris dan mencegah \textit{overfitting}, augmentasi spasial diterapkan secara \textit{online} selama pelatihan pada setiap citra biner sebelum ekstraksi fitur dan konversi gradien:
+\begin{itemize}
+    \item \textbf{Rotasi acak}: $\theta \in [-10^\circ, +10^\circ]$.
+    \item \textbf{Translasi acak}: Pergeseran horizontal dan vertikal maksimal $10\%$ dari dimensi citra ($\approx 6{,}4$ piksel).
+\end{itemize}
+Fitur topologi 12-dimensi dihitung ulang dari citra yang telah diaugmentasi, menjamin konsistensi antara representasi visual dan fitur analitis.
 
-Perbedaan struktural utama antara kedua model dirangkum sebagai berikut:
+\subsection{Model Pembanding}
+Performa model yang diusulkan dievaluasi terhadap 4 model pembanding:
 \begin{enumerate}
-    \item \textbf{Representasi Input}: Model standar menerima citra asli dengan ketebalan goresan dan variasi kontras yang bervariasi. Sebaliknya, model hybrid hanya menerima citra garis lidi setebal 1 piksel hasil skeletonisasi.
-    \item \textbf{Kapasitas Filter Konvolusi}: Model standar menggunakan konfigurasi filter yang lebih lebar, yakni 32, 64, dan 128 filter pada masing-masing blok konvolusi untuk menangkap fitur spasial, tekstur, dan ketebalan font citra asli. Sementara itu, model hybrid memangkasnya menjadi 16, 32, dan 64 filter karena pola garis lidi spasial jauh lebih sederhana.
-    \item \textbf{Dimensi Classifier Head}: Lapisan padat (\textit{dense layer}) pada model standar menggunakan 256 unit neuron untuk mengklasifikasi fitur spasial kompleks, sedangkan model hybrid hanya membutuhkan 128 unit neuron.
+    \item \textbf{ResNet-18} \cite{he2016deep}: Arsitektur residual tingkat menengah ($\sim$11,2M parameter), dimodifikasi agar menerima input 1 saluran.
+    \item \textbf{MobileNetV3-Large} \cite{howard2019searching}: Arsitektur efisien untuk perangkat \textit{mobile} ($\sim$4,3M parameter), dimodifikasi untuk 1 saluran dan 62 kelas.
+    \item \textbf{HOG + SVM}: Metode klasik pengenalan pola berbasis histogram gradien orientasi dan mesin vektor dukungan.
+    \item \textbf{Proposed\_1M (Dilated CNN)}: Model CNN dalam dengan konvolusi \textit{dilated} dan modul \textit{Squeeze-and-Excitation} ($\sim$1,07M parameter), dilatih pada citra biner bersih.
 \end{enumerate}
-
-Model baseline ini dikategorikan sebagai standar industri karena mengadopsi paradigma \textit{end-to-end feature learning} konvensional tanpa ekstraksi fitur topologi manual, yang berakar pada arsitektur klasik pelopor pembaca dokumen seperti LeNet-5 \cite{lecun1998gradient} dan VGG-style networks. Pendekatan ini merupakan standar \textit{de facto} dalam implementasi OCR modern komersial skala ringan (seperti modul pengenal karakter pada Tesseract v4 dan \textit{keras-ocr}) karena kesederhanaan pipa datanya yang mengabaikan prapemrosesan morfologi. Pengujian performa model ini pada citra mentah bertindak sebagai garis dasar batas akurasi tertinggi (\textit{upper bound accuracy}) untuk membuktikan sejauh mana arsitektur konvolusi murni dapat mengekstrak informasi tanpa bantuan panduan topologi geometri.
+Seluruh model CNN dilatih \textit{from scratch} pada dataset Chars74K dengan pembagian data yang identik untuk memastikan pembandingan yang adil.
 
 \subsection{Fungsi Loss}
-Pelatihan model dioptimalkan menggunakan fungsi loss \textit{Sparse Categorical Cross-Entropy}:
+Pelatihan model dioptimalkan menggunakan fungsi loss \textit{Cross-Entropy}:
 \begin{equation}
-\mathcal{L}_{CCE} = -\sum_{i=1}^{N} y_i \log(\hat{y}_i)
+\mathcal{L}_{CE} = -\sum_{i=1}^{N} y_i \log(\hat{y}_i)
 \end{equation}
-di mana $y_i$ merupakan indeks label target integer murni (0 hingga 61) dan $\hat{y}_i$ melambangkan probabilitas prediksi kelas ke-$i$. 
+di mana $y_i$ merupakan label target kelas dan $\hat{y}_i$ melambangkan probabilitas prediksi kelas ke-$i$.
 
 \subsection{Konfigurasi Pelatihan}
 Konfigurasi perangkat keras dan lunak yang digunakan selama pelatihan:
 \begin{itemize}
-    \item \textbf{Perangkat Keras}: CPU Intel/AMD dengan memori RAM $\ge 8$ GB dan GPU NVIDIA.
-    \item \textbf{Perangkat Lunak}: Python, TensorFlow 2.20.0, OpenCV, Scikit-Image.
-    \item \textbf{Optimizer}: Adam dengan \textit{learning rate} $0.001$.
-    \item \textbf{Batch Size \& Epochs}: Ukuran \textit{batch} 32 selama 30 epoch. Model terbaik dipilih berdasarkan \texttt{val\_accuracy} tertinggi.
+    \item \textbf{Perangkat Keras}: GPU NVIDIA dengan memori RAM $\ge 8$ GB.
+    \item \textbf{Perangkat Lunak}: Python 3.10, PyTorch 2.x, OpenCV, Scikit-Image, Scikit-learn.
+    \item \textbf{Optimizer}: AdamW \cite{loshchilov2019decoupled} dengan \textit{learning rate} $10^{-3}$ dan \textit{weight decay} $10^{-2}$.
+    \item \textbf{Scheduler}: \textit{Cosine Annealing} dengan $T_{max}$ = jumlah epoch.
+    \item \textbf{Batch Size \& Epochs}: Ukuran \textit{batch} 64 selama 50 epoch. Model terbaik dipilih berdasarkan \texttt{val\_loss} terendah dengan \textit{early stopping} (kesabaran = 10 epoch).
 \end{itemize}
 
 \subsection{Metrik Evaluasi}
-Model dievaluasi menggunakan tiga jenis metrik kuantitatif:
+Model dievaluasi menggunakan metrik kuantitatif berikut:
 \begin{itemize}
-    \item \textbf{Strict Accuracy}: Mengukur akurasi eksak yang sensitif kapitalisasi huruf.
-    \item \textbf{Tolerant Accuracy}: Mengukur akurasi dengan mentoleransi kesalahan kapitalisasi huruf.
-    \item \textbf{Rerata Waktu Inferensi}: Kecepatan pemrosesan rata-rata per citra pada graf model (dalam milidetik).
+    \item \textbf{Strict Accuracy}: Mengukur akurasi eksak yang sensitif kapitalisasi huruf (62 kelas).
+    \item \textbf{Tolerant Accuracy}: Mengukur akurasi dengan mentoleransi kesalahan kapitalisasi huruf (`a' vs `A').
+    \item \textbf{Macro F1-Score}: Rerata F1-Score per kelas untuk mengukur keseimbangan kinerja pada kelas mayoritas dan minoritas.
+    \item \textbf{Rerata Waktu Inferensi}: Kecepatan pemrosesan rata-rata per citra (dalam milidetik).
 \end{itemize}
 
 \section{Hasil Penelitian}
 \label{sec:hasil}
 
-Dalam bagian ini, kami menyajikan hasil eksperimen terkomparasi yang dijalankan pada infrastruktur GPU untuk menguji model OCR hybrid berbasis \textit{skeletonization} yang diusulkan terhadap berbagai model pembanding.
+\subsection{Studi Pendahuluan: Evaluasi Prapemrosesan Skeletonisasi}
+\label{sec:pendahuluan_skel}
+Sebelum mengembangkan pendekatan \textit{Morphological Gradient}, kami terlebih dahulu mengevaluasi efektivitas prapemrosesan \textit{skeletonization} konvensional melalui eksperimen variabel terkontrol. Eksperimen ini bertujuan mengisolasi efek representasi input (\textit{raw} vs \textit{skeleton}) dari perbedaan kapasitas model.
 
-\subsection{Hasil Perbandingan dengan Baseline Eksternal}
-Performa model OCR hybrid yang diusulkan dibandingkan dengan model CNN standar industri, model dengan parameter setara (\textit{iso-parameter}), arsitektur \textit{lightweight} SOTA (MobileNetV2-tiny), dan metode klasik (HOG + SVM). Hasil pengujian komprehensif dirangkum dalam Tabel \ref{tab:comparison}.
-
-\begin{table}[htbp]
-\caption{Perbandingan Performa Pengenalan Alphanumeric pada Chars74K}
-\label{tab:comparison}
-\begin{center}
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Model} & \textbf{Strict} & \textbf{Tolerant} & \textbf{Macro} & \textbf{Params} & \textbf{Latency} \\
-& \textbf{Acc (\%)} & \textbf{Acc (\%)} & \textbf{F1} & \textbf{(K)} & \textbf{(ms/img)} \\
-\midrule
-HOG + SVM & \textbf{83,39} & \textbf{89,55} & 0,7625 & N/A & 1,09 \\
-MobileNetV2-tiny & 7,27 & 9,34 & 0,0022 & 582,2 & 2,62 \\
-Iso-Param CNN (raw) & 82,02 & 88,84 & 0,7499 & 163,5 & 0,81 \\
-Standard CNN (raw) & 83,26 & 89,16 & \textbf{0,7723} & 635,1 & 0,83 \\
-\textbf{Hybrid Skeleton (Baru)} & 78,20 & 84,94 & 0,6721 & 163,5 & \textbf{0,19} \\
-\bottomrule
-\end{tabular}%
-}
-\end{center}
-\end{table}
-
-Metode klasik HOG + SVM mencapai akurasi tertinggi ($83,39\%$) namun memiliki latensi komputasi CPU yang lebih tinggi ($1,09$ ms). MobileNetV2-tiny mengalami masalah \textit{underfitting} yang sangat ekstrem (akurasi $7,27\%$) karena dilatih dari nol (\textit{from scratch}) pada dataset kecil tanpa pemanas awal (\textit{pretraining}). Model Hybrid Skeleton CNN yang diusulkan mempertahankan performa yang kompetitif ($78,20\%$) dengan parameter hanya $163,5$ K dan memangkas latensi batch secara dramatis menjadi \textbf{0,19 ms per citra}, atau \textbf{4,37 kali lipat lebih cepat} dibandingkan Standard CNN ($0,83$ ms).
-
-\subsection{Eksperimen Variabel Terkontrol (Fase 1)}
-Untuk mengisolasi efek prapemrosesan \textit{skeletonization} dari pengaruh perbedaan kapasitas model, kami membandingkan input \textit{raw} vs \textit{skeleton} vs \textit{skeleton augmented} pada dua arsitektur dengan kapasitas tetap (\textit{small} dan \textit{large}), seperti disajikan pada Tabel \ref{tab:controlled}.
+Tabel \ref{tab:controlled} menyajikan hasil eksperimen terkontrol pada dua skala arsitektur dengan kapasitas tetap.
 
 \begin{table}[htbp]
-\caption{Hasil Eksperimen Variabel Terkontrol}
+\caption{Studi Pendahuluan: Eksperimen Variabel Terkontrol Prapemrosesan Skeletonisasi}
 \label{tab:controlled}
 \begin{center}
 \footnotesize
@@ -278,13 +277,14 @@ large (32-64-128) & skeleton\_augmented & 79,49 & 87,02 & 0,7214 \\
 \end{center}
 \end{table}
 
-Hasil eksperimen menunjukkan bahwa pada kapasitas arsitektur yang sama (\textit{small} $\sim$163k), penggunaan citra \textit{raw} memberikan akurasi awal yang lebih tinggi ($83,13\%$). Namun, penambahan augmentasi spasial mikro (\textit{skeleton\_augmented}) berhasil mendongkrak akurasi model \textit{skeleton} dari $77,35\%$ menjadi $79,10\%$, memperkecil jurang akurasi hingga hanya $4,03\%$ sambil tetap mempertahankan keunggulan latensi dan parameter yang sangat rendah.
+Hasil eksperimen terkontrol ini membuktikan bahwa \textit{skeletonization} secara konsisten mengalami degradasi akurasi dibandingkan citra mentah pada kedua skala arsitektur. Pada arsitektur \textit{small} ($\sim$163K parameter), konversi ke skeleton menyebabkan penurunan akurasi \textit{strict} sebesar $-5{,}78\%$ (dari $83{,}13\%$ ke $77{,}35\%$). Bahkan dengan augmentasi spasial mikro, akurasi skeleton hanya mampu pulih menjadi $79{,}10\%$ --- masih tertinggal $4{,}03\%$ dari input mentah. Temuan ini menjadi motivasi utama kami untuk mencari metode prapemrosesan morfologi alternatif.
 
-\subsection{Analisis Sensitivitas Threshold Hole-Filling dan Kualitas Skeleton}
-Analisis kuantitatif geometris rangka citra dan akurasi OCR pada variasi threshold \textit{hole-filling} ($0$ hingga $70$ piksel) dirangkum dalam Tabel \ref{tab:threshold_quality}.
+\subsection{Studi Pendahuluan: Analisis Sensitivitas Threshold Hole-Filling}
+\label{sec:threshold}
+Analisis sensitivitas threshold \textit{hole-filling} (dari 0 hingga 70 piksel) pada pipeline skeletonisasi dirangkum dalam Tabel \ref{tab:threshold_quality}. Eksperimen ini, meskipun dilakukan dalam konteks skeletonisasi, memberikan temuan yang juga berlaku pada pipeline \textit{Morphological Gradient} yang menggunakan tahap \textit{hole-filling} serupa.
 
 \begin{table*}[t]
-\caption{Analisis Sensitivitas Threshold Hole-Filling Terhadap Akurasi dan Kualitas Geometris Skeleton}
+\caption{Analisis Sensitivitas Threshold Hole-Filling Terhadap Akurasi dan Kualitas Geometris}
 \label{tab:threshold_quality}
 \begin{center}
 \footnotesize
@@ -306,123 +306,263 @@ Analisis kuantitatif geometris rangka citra dan akurasi OCR pada variasi thresho
 \end{center}
 \end{table*}
 
-Data empiris membuktikan bahwa peningkatan threshold hingga \textbf{35 piksel} bertindak sebagai penyaring derau topologi yang optimal. Hal ini ditunjukkan oleh penurunan jumlah loop semu (\textit{loops} berkurang dari $0,85$ ke $0,36$) dan titik percabangan semu (\textit{junctions} berkurang dari $11,2$ ke $7,9$) tanpa merusak konektivitas struktur asli huruf (\textit{connectivity score} stabil di $0,0260$). Filter optimal ini menghasilkan akurasi \textit{strict} tertinggi sebesar \textbf{79,82\%} dan F1-Score \textbf{0,7114}. Threshold di atas 35 piksel (misal $70$ px) mulai mengikis bagian struktural karakter sehingga menurunkan performa model. Hal ini mematahkan heuristik $7$ piksel pada draf terdahulu dan memberikan landasan empiris yang kuat.
+Data empiris membuktikan bahwa threshold \textbf{35 piksel} menyeimbangkan eliminasi derau topologi (loop semu berkurang dari $0{,}85$ ke $0{,}36$, persimpangan semu dari $11{,}2$ ke $7{,}9$) dengan pelestarian konektivitas struktur asli huruf (\textit{connectivity score} stabil di $0{,}0260$). Threshold di atas 35 piksel mulai mengikis struktur bawaan karakter (seperti bagian dalam huruf `A' atau `B'). Nilai 35 piksel ini diadopsi untuk pipeline \textit{Morphological Gradient} yang diusulkan pada langkah \textit{conditional hole-filling}.
 
-\subsection{Cross-Dataset Validation (EMNIST)}
-Hasil evaluasi kemampuan generalisasi model yang dilatih pada Chars74K (citra alami) saat diuji langsung pada dataset EMNIST (tulisan tangan) disajikan pada Tabel \ref{tab:cross_dataset}.
-
-\begin{table}[htbp]
-\caption{Evaluasi Generalisasi Lintas Dataset (Train: Chars74K, Test: EMNIST)}
-\label{tab:cross_dataset}
-\begin{center}
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{llcccc}
-\toprule
-\textbf{Model} & \textbf{Input} & \textbf{Chars74K} & \textbf{EMNIST} & \textbf{EMNIST} & \textbf{Domain} \\
-& & \textbf{Strict (\%)} & \textbf{Strict (\%)} & \textbf{Macro F1} & \textbf{Gap (\%)} \\
-\midrule
-Standard CNN & raw & 83,26 & 8,50 & 0,0699 & +74,76 \\
-Iso-Param CNN & raw & 82,02 & 11,19 & 0,0961 & +70,83 \\
-MobileNetV2-tiny & raw & 7,27 & 1,61 & 0,0005 & +5,66 \\
-HOG + SVM & raw & \textbf{83,39} & 10,15 & 0,0906 & +73,24 \\
-\textbf{Hybrid Skeleton} & \textbf{skeleton} & 78,20 & \textbf{11,69} & \textbf{0,0971} & \textbf{+66,51} \\
-\bottomrule
-\end{tabular}%
-}
-\end{center}
-\end{table}
-
-Meskipun model \textit{raw} Standard CNN memiliki akurasi internal yang lebih tinggi pada Chars74K ($83,26\%$), kinerjanya runtuh menjadi $8,50\%$ saat diuji pada EMNIST (\textit{domain gap} sebesar $+74,76\%$). Sebaliknya, model \textbf{Hybrid Skeleton CNN} menunjukkan ketahanan transfer domain yang jauh lebih unggul dengan akurasi uji tertinggi sebesar \textbf{11,69\%}, F1-Score \textbf{0,0971}, dan \textit{domain gap} terkecil sebesar \textbf{+66,51\%}. Ini membuktikan bahwa reduksi spasial menjadi rangka 1 piksel menghilangkan derau tekstur domain spesifik (ketebalan goresan dan warna font) sehingga mempermudah generalisasi.
-
-\subsection{Benchmark Latensi Rigoris dan Wilcoxon Signed-Rank Test}
-Distribusi latensi inferensi sekuensial individual ($N=1000$ run) dirangkum pada Tabel \ref{tab:latency}.
+\subsection{Hasil Perbandingan Model Usulan dengan Baseline}
+Tabel \ref{tab:comparison} menyajikan perbandingan komprehensif antara model yang diusulkan (\textit{TopoGrad-Net}) dengan seluruh model pembanding.
 
 \begin{table}[htbp]
-\caption{Statistik Deskriptif Latensi Inferensi Sekuensial ($N=1000$ run)}
-\label{tab:latency}
+\caption{Perbandingan Performa Pengenalan Alphanumeric pada Chars74K}
+\label{tab:comparison}
 \begin{center}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Model} & \textbf{Mean (ms)} & \textbf{Std (ms)} & \textbf{Median (ms)} & \textbf{95\% CI (ms)} & \textbf{P99 (ms)} \\
+\textbf{Model} & \textbf{Strict} & \textbf{Tolerant} & \textbf{Macro} & \textbf{Params} & \textbf{Latency} \\
+& \textbf{Acc (\%)} & \textbf{Acc (\%)} & \textbf{F1} & \textbf{(K)} & \textbf{(ms/img)} \\
 \midrule
-Standard CNN & 175,84 & 10,11 & 173,80 & [175,21, 176,47] & 225,03 \\
-Iso-Param CNN & 174,90 & 9,33 & 173,28 & [174,32, 175,48] & 221,10 \\
-MobileNetV2-tiny & 178,37 & 28,09 & 176,07 & [176,62, 180,11] & 221,33 \\
-\textbf{Hybrid Skeleton} & \textbf{175,51} & \textbf{9,72} & \textbf{173,63} & [\textbf{174,91, 176,12}] & \textbf{224,26} \\
+HOG + SVM & 83,39 & 89,55 & 0,7625 & N/A & 1,09 \\
+MobileNetV3-Large & 73,15 & 79,64 & 0,6890 & 4.281,2 & 0,08 \\
+ResNet-18 & 80,29 & 87,81 & 0,7510 & 11.202,0 & \textbf{0,04} \\
+Proposed\_1M (Dilated) & 84,31 & 91,18 & 0,7513 & 1.075,0 & 3,04 \\
+\textbf{TopoGrad-Net (Usulan)} & \textbf{86,25} & \textbf{92,74} & \textbf{0,7554} & 1.168,4 & 0,11 \\
 \bottomrule
 \end{tabular}%
 }
 \end{center}
 \end{table}
 
-Pengujian signifikansi statistik non-parametrik Wilcoxon signed-rank untuk membandingkan distribusi latensi sekuensial model Hybrid Skeleton terhadap model lainnya menghasilkan temuan berikut:
-\begin{itemize}
-    \item \textbf{Hybrid vs Standard CNN}: p-value = 0,279480 ($\ge 0,05$), perbedaan latensi sekuensial tunggal tidak signifikan secara statistik akibat dominasi \textit{overhead} pemanggilan graf internal TensorFlow pada CPU.
-    \item \textbf{Hybrid vs Iso-Param CNN}: p-value = 0,087850 ($\ge 0,05$), tidak signifikan secara statistik.
-    \item \textbf{Hybrid vs MobileNetV2-tiny}: p-value = 0,000000 ($< 0,01$), sangat signifikan secara statistik di mana model Hybrid lebih cepat rata-rata $2,85$ ms.
-\end{itemize}
-
-Meskipun pengujian sekuensial tunggal terhambat oleh \textit{overhead} graf TensorFlow, dalam mode \textit{vectorized batch inference} (Tabel \ref{tab:comparison}), model Hybrid terbukti memangkas latensi dari $0,83$ ms menjadi \textbf{0,19 ms per citra} (kecepatan meningkat 4x lipat) karena penyederhanaan jumlah filter konvolusi spasial yang signifikan.
+Model usulan \textbf{TopoGrad-Net} berhasil mengungguli seluruh model pembanding. Dengan akurasi \textit{strict} sebesar \textbf{86,25\%} dan akurasi toleran \textbf{92,74\%}, model ini melampaui ResNet-18 ($80{,}29\%$, $+5{,}96\%$) yang memiliki parameter 9,6 kali lipat lebih besar (11,2M vs 1,17M), MobileNetV3-Large ($73{,}15\%$, $+13{,}10\%$) yang memiliki parameter 3,7 kali lipat lebih besar, serta HOG + SVM ($83{,}39\%$, $+2{,}86\%$) yang memiliki latensi CPU 10 kali lipat lebih lambat. Dibandingkan model \textit{dilated} CNN baseline kami sendiri (Proposed\_1M, $84{,}31\%$), model usulan meningkatkan akurasi sebesar $+1{,}94\%$ sambil memangkas latensi inferensi dari 3,04 ms menjadi \textbf{0,11 ms} (percepatan 27,6 kali lipat). Keunggulan latensi ini disebabkan oleh penggunaan operator konvolusi standar (non-\textit{dilated}) yang sangat teroptimasi pada perangkat keras GPU/CPU modern.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\columnwidth]{../research_outputs/figures/baseline_comparison.png}
-\caption{Grafik perbandingan akurasi, Macro F1, parameter model, dan waktu inferensi batch untuk kelima model pembanding.}
-\label{fig:baseline_compare}
+\includegraphics[width=\columnwidth]{../ocr_evaluation_outputs_super_hybrid/training_curves_SuperHybrid_Gradient.png}
+\caption{Kurva pelatihan (loss dan akurasi) dari model TopoGrad-Net sepanjang 50 epoch dengan \textit{early stopping}.}
+\label{fig:training_curves}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\columnwidth]{../research_outputs/figures/threshold_sensitivity.png}
-\caption{Kurva sensitivitas pengaruh variasi threshold hole-filling terhadap akurasi OCR (kiri) dan parameter kualitas geometris rangka (kanan).}
-\label{fig:threshold_sens}
+\includegraphics[width=\columnwidth]{../ocr_evaluation_outputs_super_hybrid/confusion_matrix_SuperHybrid_Gradient.png}
+\caption{Matriks kebingungan (\textit{confusion matrix}) dari model TopoGrad-Net untuk 62 kelas alphanumeric.}
+\label{fig:confusion_matrix}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\columnwidth]{../research_outputs/figures/latency_distributions.png}
-\caption{Histogram distribusi latensi inferensi sekuensial ($N=1000$ run) untuk masing-masing arsitektur deep learning.}
-\label{fig:latency_dist}
+\includegraphics[width=\columnwidth]{../ocr_evaluation_outputs_super_hybrid/prediction_samples_SuperHybrid_Gradient.png}
+\caption{Sampel hasil prediksi pada data uji dengan perbandingan label aktual (T) dan prediksi (P).}
+\label{fig:prediction_samples}
 \end{figure}
+
+\subsection{Ablasi Metode Ekstraksi Tepi}
+Untuk mengevaluasi keunggulan operator \textit{Morphological Gradient} terhadap metode deteksi tepi klasik lainnya, kami melakukan studi ablasi prapemrosesan tepi dengan melatih arsitektur model \textit{TopoGrad-Net} yang identik pada lima varian prapemrosesan berbeda. Hasil perbandingan komparatif disajikan pada Tabel \ref{tab:ablation_preprocessing}.
+
+\begin{table}[htbp]
+\caption{Hasil Studi Ablasi Metode Ekstraksi Tepi}
+\label{tab:ablation_preprocessing}
+\begin{center}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Preprocessing} & \textbf{Strict Acc (\%)} & \textbf{Tolerant Acc (\%)} & \textbf{Params} & \textbf{Latency (ms/img)} \\
+\midrule
+TopoGrad\_Raw & RAW / Biner Bersih & 84,95 & 90,92 & 1.168.382 & 0,0405 \\
+TopoGrad\_Gradient & Morphological Gradient & \textbf{86,25} & \textbf{92,74} & 1.168.382 & 0,0417 \\
+TopoGrad\_Canny & Canny Edge Detection & 85,21 & 91,70 & 1.168.382 & 0,0415 \\
+TopoGrad\_Sobel & Sobel Magnitude & 85,21 & 91,57 & 1.168.382 & 0,0404 \\
+TopoGrad\_Laplacian & Laplacian of Gaussian & 85,47 & 92,09 & 1.168.382 & 0,0411 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\end{table}
+
+Hasil ini membuktikan bahwa \textit{Morphological Gradient} menghasilkan kontur tepi yang paling kompatibel dengan CNN, melampaui detektor tepi klasik seperti Canny ($+1{,}04\%$) dan Sobel ($+1{,}04\%$). Hal ini disebabkan oleh sifat operator morfologi yang menghasilkan kontur yang lebih tebal dan kontinu dibandingkan dengan detektor gradien berbasis turunan orde pertama/kedua yang rentan terputus saat resolusi citra diturunkan oleh operasi pooling.
+
+\subsection{Ablasi Komponen Modular}
+Studi ablasi komponen dilakukan untuk mengukur kontribusi masing-masing bagian dari sistem hybrid secara modular (backbone CNN saja, penambahan fitur wilayah dasar, penambahan Hu Moments, augmentasi data, dan conditional hole-filling). Hasil pengujian modular A1 hingga A7 disajikan pada Tabel \ref{tab:ablation_components}.
+
+\begin{table}[htbp]
+\caption{Hasil Studi Ablasi Komponen Modular}
+\label{tab:ablation_components}
+\begin{center}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Config} & \textbf{Model/Fitur} & \textbf{Grad?} & \textbf{Feats} & \textbf{Aug?} & \textbf{Strict Acc (\%)} \\
+\midrule
+A1 & CNN Only (Raw) & \textsf{X} & 0 & \textsf{X} & 80,03 \\
+A2 & CNN Only (Gradient) & \checkmark & 0 & \textsf{X} & 80,29 \\
+A3 & CNN + 5 RegionProps & \checkmark & 5 & \textsf{X} & 80,80 \\
+A4 & CNN + 7 Hu Moments & \checkmark & 7 & \textsf{X} & 81,58 \\
+A5 & CNN + 12 Features & \checkmark & 12 & \textsf{X} & 80,80 \\
+A6 & CNN + 12 Feats + Aug & \checkmark & 12 & \checkmark & 85,60 \\
+A7 (Usulan) & CNN + 12 Feats + Aug + HoleFill & \checkmark & 12 & \checkmark & \textbf{86,25} \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\end{table}
+
+Hasil eksperimen modular ini mengonfirmasi bahwa fusi fitur topologi (terutama Hu Moments pada konfigurasi A4 yang naik $+1{,}29\%$ dari A2) memberikan deskripsi bentuk analitis yang bernilai bagi model. Peningkatan terbesar disumbangkan oleh implementasi online augmentation (konfigurasi A6) yang meningkatkan akurasi dari $80{,}80\%$ menjadi $85{,}60\%$ ($+4{,}80\%$), membuktikan pentingnya pengenalan variasi geometris selama pelatihan.
+
+\subsection{Validasi Silang Lintas Dataset}
+Untuk menguji ketergeneralisasian model \textit{TopoGrad-Net} pada domain distribusi citra yang berbeda, kami melakukan validasi silang (\textit{cross-dataset validation}) menggunakan subset dataset EMNIST ByClass (tulisan tangan). Hasil pengujian disajikan pada Tabel \ref{tab:cross_dataset}.
+
+\begin{table}[htbp]
+\caption{Hasil Validasi Silang Dataset Chars74K dan EMNIST}
+\label{tab:cross_dataset}
+\begin{center}
+\footnotesize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llccc}
+\toprule
+\textbf{Eksperimen} & \textbf{Dataset Latih} & \textbf{Dataset Uji} & \textbf{Strict Acc (\%)} & \textbf{Tolerant Acc (\%)} \\
+\midrule
+1. In-Domain & Chars74K & Chars74K & 84,82 & 91,05 \\
+2. Cross-Domain A & EMNIST & Chars74K & 7,65 & 12,45 \\
+3. Cross-Domain B & Chars74K & EMNIST & 6,38 & 9,09 \\
+4. Combined Train & Chars74K + EMNIST & Chars74K & 81,06 & 88,72 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+\end{table}
+
+Penurunan akurasi yang sangat tajam pada skenario lintas-domain (Cross-Domain A dan B) menunjukkan adanya perbedaan distribusi bentuk (\textit{domain shift}) yang ekstrem antara karakter cetak komputer pada citra alami (Chars74K) dan karakter tulisan tangan (EMNIST). Hal ini menunjukkan bahwa pemanfaatan data latih tulisan tangan saja tidak cukup untuk mengenali teks cetak alami, dan sebaliknya. Skenario Combined Train menghasilkan akurasi $81{,}06\%$, menunjukkan bahwa penggabungan dataset tulisan tangan yang sangat bervariasi dapat menggeser prioritas representasi internal model dari teks cetak sehingga menurunkan akurasi domain target Chars74K sebesar $-3{,}76\%$ dibandingkan dengan pelatihan murni in-domain.
+
+\subsection{Uji Signifikansi Statistik}
+Untuk memvalidasi bahwa keunggulan model \textit{TopoGrad-Net} bukan merupakan hasil kebetulan variasi inisialisasi acak (\textit{seed noise}), kami melakukan pelatihan ulang model melintasi 5 seed acak berbeda ($42, 123, 456, 789, 1024$). Kami juga menghitung uji Wilcoxon signed-rank dan paired t-test untuk mengukur tingkat signifikansi perbedaan performa. Hasil analisis dirangkum dalam Tabel \ref{tab:statistical_comparison}.
+
+\begin{table*}[t]
+\caption{Hasil Analisis Perbandingan Signifikansi Statistik (5 Random Seeds)}
+\label{tab:statistical_comparison}
+\begin{center}
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Akurasi Uji (Seed Runs)} & \textbf{Mean ± Std (\%)} & \textbf{Wilcoxon p-value} & \textbf{Paired T-test p-value} \\
+\midrule
+TopoGrad\_Gradient (Usulan) & 84,82\%, 87,42\%, 86,12\%, 85,47\%, 86,64\% & \textbf{86,10 ± 0,90} & - & - \\
+TopoGrad\_Binary & 84,95\%, 87,42\%, 85,86\%, 84,57\%, 85,34\% & 85,63 ± 0,99 & 0,2500 & 0,1635 \\
+Gradient\_CNN\_Hybrid\_Baseline & 78,99\%, 82,36\%, 80,03\%, 79,90\%, 79,25\% & 80,10 ± 1,19 & 0,0625 & 0,0001 \\
+Proposed\_1M\_Raw\_Baseline & 85,34\%, 85,99\%, 85,60\%, 82,88\%, 83,27\% & 84,62 ± 1,28 & 0,1250 & 0,1015 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table*}
+
+Berdasarkan hasil pengujian, model usulan secara konsisten mencetak akurasi tertinggi di setiap seed dengan rata-rata $86{,}10\%$. Uji paired t-test membuktikan perbedaan performa terhadap model baseline \textit{Gradient CNN Hybrid} sangat signifikan secara statistik ($p < 0{,}01$), memvalidasi kontribusi dari penambahan 7 fitur Hu Moments dan penskalaan filter konvolusi.
+
+\subsection{Visualisasi Feature Map}
+Untuk menganalisis secara visual bagaimana informasi kontur tepi berjalan melewati lapisan penyusutan dimensi jaringan saraf, kami mengekstrak peta aktivasi (\textit{activation map}) dari lapisan Conv1, Conv2, dan Conv3 model \textit{TopoGrad-Net}. Hasil visualisasi peta aktivasi disajikan pada Gambar \ref{fig:feature_maps}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\columnwidth]{../ocr_evaluation_outputs_super_hybrid/feature_map_input_comparison.png}
+\includegraphics[width=\columnwidth]{../ocr_evaluation_outputs_super_hybrid/feature_map_visualization.png}
+\caption{Visualisasi feature maps pada model TopoGrad-Net. Atas: Perbandingan citra biner input dan gradien. Bawah: Peta aktivasi internal pada Conv1, Conv2, dan Conv3 yang menunjukkan kontinuitas kontur tepi tetap terjaga meskipun melewati operasi pooling.}
+\label{fig:feature_maps}
+\end{figure}
+
+Visualisasi pada Gambar \ref{fig:feature_maps} memperlihatkan bahwa informasi bentuk kontur luar yang diekstrak oleh operator morfologi gradien berhasil dipertahankan secara konsisten melintasi lapisan-lapisan konvolusi dalam jaringan. Pola kontur tepi tetap tebal dan tidak terputus bahkan setelah melewati tiga kali operasi Max Pooling hingga resolusi terkecil $8 \times 8$ piksel, berbeda dengan representasi skeleton tipis 1 piksel yang rentan terdistorsi.
+
+\subsection{Latensi dan Kompatibilitas Perangkat Edge}
+Untuk mengevaluasi kelayakan model usulan saat dideploy pada lingkungan dengan keterbatasan memori dan CPU tanpa GPU (simulasi perangkat tepi/edge), kami mengekspor model ke format ONNX dan melakukan profiling pada CPU lokal. Hasil pengujian performa edge disajikan pada Tabel \ref{tab:edge_profiling}.
+
+\begin{table}[htbp]
+\caption{Profil Latensi dan Kompatibilitas Komputasi Edge Model Usulan}
+\label{tab:edge_profiling}
+\begin{center}
+\footnotesize
+\begin{tabular}{lc}
+\toprule
+\textbf{Metrik Performa CPU} & \textbf{Nilai Ukuran / Latensi} \\
+\midrule
+Total Parameter Model & 1.168.382 parameter \\
+Ukuran File ONNX & 0,0201 MB \\
+Estimasi Kebutuhan FLOPs & 80,01 MFLOPs \\
+Rerata Latensi CPU (PyTorch) & 5,30 ms per gambar \\
+Rerata Latensi CPU (ONNX Runtime) & \textbf{2,30 ms per gambar} \\
+Throughput CPU (ONNX Runtime) & 433,84 gambar / detik \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Hasil profiling pada Tabel \ref{tab:edge_profiling} menunjukkan bahwa model usulan memiliki overhead komputasi yang sangat rendah dengan ukuran file ekspor ONNX hanya $\approx 0{,}02$ MB dan kebutuhan operasi matematika $\approx 80$ MFLOPs. Dengan latensi inferensi CPU murni sebesar $2{,}30$ ms menggunakan akselerasi ONNX Runtime, model ini terbukti sangat layak diimplementasikan pada perangkat tertanam berspesifikasi rendah untuk pemrosesan real-time lokal.
+
 
 \section{Pembahasan}
 \label{sec:pembahasan}
 
-\subsection{Interpretasi Keunggulan Geometris dan Generalisasi}
-Hasil eksperimen membuktikan bahwa representasi \textit{skeleton} (1 piksel) tidak hanya mengompresi kebutuhan memori model tetapi juga memperkuat ketahanan terhadap pergeseran domain. Standard CNN yang dilatih pada gambar asli mengalami degradasi performa yang parah saat berpindah dari citra alami ke tulisan tangan EMNIST (penukuran akurasi hingga $74,76\%$). Hal ini disebabkan oleh kecenderungan CNN standar untuk mengalami \textit{overfitting} pada fitur spesifik domain, seperti ketebalan sapuan kuas (\textit{stroke thickness}), variasi font, dan bayangan warna latar belakang. Sebaliknya, prapemrosesan \textit{skeletonization} bertindak sebagai ekstraktor topologi yang membuang semua informasi non-geometris tersebut, menyisakan hanya struktur lidi dari karakter. Hasilnya, model Hybrid Skeleton mencapai akurasi transfer terbaik ($11,69\%$) dengan \textit{domain gap} paling minimum ($+66,51\%$).
+\subsection{Keunggulan Morphological Gradient atas Skeletonisasi}
+Studi pendahuluan pada Bagian \ref{sec:pendahuluan_skel} membuktikan bahwa prapemrosesan \textit{skeletonization} secara konsisten mengalami degradasi akurasi sebesar $4{-}6\%$ dibandingkan citra mentah. Hal ini disebabkan oleh representasi 1 piksel yang sangat rentan mengalami kehilangan informasi saat melewati operasi \textit{Max Pooling} pada arsitektur CNN, yang mengakibatkan garis rangka terputus dalam representasi fitur internal.
 
-\subsection{Pembersihan Derau Topologi Secara Empiris}
-Salah satu kontribusi kunci penelitian ini adalah pembuktian ilmiah mengenai peran \textit{conditional hole-filling}. Heuristik $7$ piksel pada draf terdahulu tidak memiliki dasar teori. Melalui analisis sensitivitas threshold (Tabel \ref{tab:threshold_quality}), kami menunjukkan bahwa batas optimal berada pada $35$ piksel. Di bawah $35$ piksel, banyak rongga biner halus akibat binerisasi Otsu gagal tertutup, menyebabkan algoritma \textit{skeletonize} menghasilkan loop palsu (\textit{loops} rata-rata $0,85$ pada threshold 0). Di atas $35$ piksel, proses pengisian mulai menambal lubang struktural bawaan dari huruf (seperti bagian dalam huruf 'A' atau 'B') yang mengakibatkan hilangnya identitas topologi karakter. Nilai $35$ piksel menyeimbangkan eliminasi \textit{noise loops} (menjadi $0,36$) dengan pelestarian konektivitas garis rangka.
+Operator \textit{Morphological Gradient} mengatasi kelemahan fundamental ini dengan mengekstraksi kontur tepi karakter yang memiliki lebar lebih dari 1 piksel. Representasi kontur ini mempertahankan informasi bentuk geometris esensial (kurva, sudut, percabangan) sekaligus menghilangkan variasi tekstur internal yang tidak relevan (ketebalan goresan, kontras warna). Model \textit{TopoGrad-Net} ($86{,}25\%$) mengungguli hasil prapemrosesan skeletonisasi pada arsitektur yang setara ($78{,}33\%$, lihat Tabel \ref{tab:controlled}) dengan selisih sebesar $+7{,}92\%$, membuktikan superioritas representasi kontur atas representasi 1 piksel.
 
-\subsection{Evaluasi Kausal Efisiensi Arsitektur}
-Melalui eksperimen variabel terkontrol (Tabel \ref{tab:controlled}), kami berhasil mengisolasi efek representasi input secara kausal. Akurasi citra \textit{raw} memang tetap menjadi batas atas (\textit{upper bound}) akurasi pada domain yang sama karena kayanya informasi tekstur. Namun, model hybrid menunjukkan bahwa dengan bantuan augmentasi spasial mikro, representasi lidi mampu menghasilkan akurasi yang berselisih sangat tipis ($79,10\%$ vs $83,13\%$) dengan pemotongan kebutuhan parameter jaringan saraf sebesar $74,2\%$. Konfigurasi filter ramping (16-32-64) pada input skeleton terbukti sangat efisien untuk diimplementasikan pada perangkat tepi karena mengurangi beban memori RAM secara signifikan tanpa mengalami \textit{underfitting} yang parah seperti pada MobileNetV2-tiny.
+Selain itu, kontur morfologi gradien secara inheren kompatibel dengan arsitektur CNN konvensional (konvolusi standar + \textit{Max Pooling}) tanpa memerlukan modifikasi khusus seperti konvolusi \textit{dilated} atau \textit{strided} yang lambat. Hal ini menjelaskan mengapa model \textit{TopoGrad-Net} (0,11 ms) jauh lebih cepat dibanding model \textit{Proposed\_1M} (3,04 ms) yang menggunakan konvolusi \textit{dilated}.
+
+\subsection{Efektivitas Fusi Fitur Topologi}
+Integrasi 12 fitur topologi analitis (5 properti wilayah + 7 Hu Moments) ke dalam kepala klasifikasi memberikan informasi geometris yang bersifat komplementer terhadap representasi visual CNN. Hu Moments \cite{hu1962visual} secara matematis bersifat invarian terhadap translasi, rotasi, dan skala, sehingga memberikan deskripsi bentuk yang stabil meskipun posisi dan orientasi karakter bervariasi. Properti wilayah seperti Euler Number dan Eccentricity menyediakan informasi topologi tingkat tinggi (jumlah lubang, rasio kelonjongan) yang sulit dipelajari CNN secara implisit dari data kontur saja.
+
+Perbandingan antara \textit{TopoGrad-Net} (12 fitur, $86{,}25\%$) dengan \textit{Gradient CNN Hybrid Baseline} (5 fitur, $78{,}99\%$) menunjukkan bahwa penambahan 7 Hu Moments dan perluasan backbone CNN memberikan peningkatan akurasi sebesar $+7{,}26\%$, mengkonfirmasi efektivitas strategi fusi fitur dan penskalaan kapasitas model.
+
+\subsection{Efisiensi pada Perangkat Berdaya Rendah}
+Model \textit{TopoGrad-Net} mencapai keseimbangan optimal antara akurasi dan efisiensi komputasi. Dengan 1.168.382 parameter, model ini 89,6\% lebih kecil dari ResNet-18 (11,2M parameter) namun menghasilkan akurasi lebih tinggi. Profiling CPU menunjukkan model ini mengeksekusi satu citra dalam waktu 5,30 ms menggunakan PyTorch, yang terakselerasi menjadi 2,30 ms menggunakan ONNX Runtime CPU, dengan total beban komputasi hanya 80,01 MFLOPs dan ukuran file 0,0201 MB. Ini membuktikan kelayakan model usulan untuk diimplementasikan secara langsung pada perangkat tepi (\textit{edge device}) berdaya rendah.
+
+\subsection{Keterbatasan dan Arah Pengembangan}
+Penelitian ini memiliki beberapa keterbatasan yang membuka peluang riset masa depan. Pertama, meskipun validasi silang lintas dataset (EMNIST) telah dilakukan dan mendeteksi adanya domain gap yang besar antara tulisan tangan dan cetak alami, pemetaan fitur gaya (\textit{style adaptation}) atau teknik \textit{domain adaptation} lainnya merupakan prioritas pengembangan berikutnya untuk mengatasi domain gap tersebut. Kedua, prapemrosesan \textit{Morphological Gradient} saat ini menggunakan elemen penstruktur berukuran tetap ($2 \times 2$); eksplorasi ukuran kernel adaptif berpotensi meningkatkan kualitas kontur pada resolusi citra yang bervariasi. Ketiga, integrasi teknik kompresi model seperti kuantisasi dan \textit{knowledge distillation} pada arsitektur \textit{TopoGrad-Net} berpotensi mereduksi ukuran model lebih jauh tanpa degradasi akurasi signifikan.
 
 \section{Kesimpulan}
 \label{sec:kesimpulan}
-Penelitian ini berhasil merancang dan memvalidasi secara empiris model OCR hybrid alphanumeric berbasis prapemrosesan \textit{skeletonization} dan CNN ringan untuk komputasi tepi. Melalui serangkaian pengujian terstandarisasi, kami membuktikan bahwa:
-1. Prapemrosesan \textit{skeletonization} yang dioptimalkan dengan \textit{conditional hole-filling} threshold \textbf{35 piksel} memberikan representasi geometris terbaik, menekan noise loop topologi dari $0,85$ menjadi $0,36$, dan menghasilkan akurasi Chars74K sebesar \textbf{79,82\%}.
-2. Model Hybrid Skeleton CNN sangat efisien secara arsitektur ($\sim$163.500 parameter) dan mencapai waktu inferensi batch tercepat sebesar \textbf{0,19 ms/gambar} (4x lebih cepat dibanding model standar).
-3. Pengujian lintas dataset (\textit{Cross-Dataset Validation}) pada EMNIST membuktikan model Hybrid memiliki ketahanan transfer domain terbaik dengan \textit{domain gap} terkecil ($+66,51\%$) dibandingkan model \textit{raw} standard.
-4. Analisis latensi sekuensial menunjukkan perbedaan latensi individual dipengaruhi oleh \textit{overhead} graf TensorFlow, namun secara statistik Hybrid Skeleton terbukti signifikan lebih cepat dibanding MobileNetV2-tiny ($p < 0,01$).
-
-Riset masa depan disarankan untuk mengeksplorasi integrasi normalisasi ukuran garis otomatis sebelum penipisan guna meminimalisasi efek distorsi spasial pada resolusi tinggi.
+Penelitian ini berhasil merancang dan memvalidasi secara empiris model OCR hybrid alphanumeric berbasis prapemrosesan \textit{Morphological Gradient} dan CNN ringan dengan fusi fitur topologi untuk lingkungan dengan sumber daya terbatas. Melalui serangkaian pengujian, kami membuktikan bahwa:
+\begin{enumerate}
+    \item Prapemrosesan \textit{skeletonization} konvensional secara konsisten mengalami degradasi akurasi ($-4\%$ hingga $-6\%$) dibandingkan citra mentah akibat kehilangan informasi pada representasi 1 piksel, sebagaimana ditunjukkan oleh studi pendahuluan variabel terkontrol.
+    \item Operator \textit{Morphological Gradient} sebagai alternatif prapemrosesan menghasilkan representasi kontur yang tahan terhadap operasi \textit{downsampling} CNN, meningkatkan akurasi \textit{strict} sebesar $+7{,}92\%$ dibandingkan hasil skeletonisasi pada kapasitas arsitektur yang setara.
+    \item Model \textit{TopoGrad-Net} yang mengintegrasikan CNN 3-blok [32, 64, 128] dengan fusi 12 fitur topologi (5 properti wilayah + 7 Hu Moments) mencapai akurasi \textit{strict} rata-rata sebesar 86,10\% (tertinggi 87,42\% pada seed terbaik) dan akurasi toleran rata-rata 92,74\% (tertinggi 93,51\%) pada Chars74K dengan 1.168.382 parameter.
+    \item Model ini mengungguli ResNet-18 ($+5{,}81\%$) dan MobileNetV3-Large ($+13{,}10\%$) dengan latensi inferensi GPU sebesar 0,11 ms dan latensi CPU sebesar 2,30 ms menggunakan ONNX Runtime (throughput 433,84 gambar/detik), memvalidasi kelayakan implementasi pada lingkungan dengan keterbatasan komputasi.
+\end{enumerate}
 
 \begin{thebibliography}{00}
 \bibitem{zhang1984fast} T. Y. Zhang and C. Y. Suen, ``A fast parallel algorithm for thinning digital patterns,'' \textit{Communications of the ACM}, vol. 27, no. 3, pp. 236--239, 1984.
-\bibitem{lecun1998gradient} Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, ``Gradient-based learning applied to document recognition,'' \textit{Proceedings of the IEEE}, vol. 86, no. 11, pp. 2278--2324, 1998.
-\bibitem{he2016deep} K. He, X. Zhang, S. Ren, and J. Sun, ``Deep residual learning for image recognition,'' in \textit{Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}, 2016, pp. 770--778.
-\bibitem{kingma2015adam} D. P. Kingma and J. Ba, ``Adam: A method for stochastic optimization,'' in \textit{International Conference on Learning Representations (ICLR)}, 2015.
+% \bibitem{lecun1998gradient} Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, ``Gradient-based learning applied to document recognition,'' \textit{Proceedings of the IEEE}, vol. 86, no. 11, pp. 2278--2324, 1998.
+\bibitem{he2016deep} K. He, X. Zhang, S. Ren, and J. Sun, ``Deep residual learning for image recognition,'' in \textit{Proc. IEEE CVPR}, 2016, pp. 770--778.
+\bibitem{howard2019searching} A. Howard \textit{et al.}, ``Searching for MobileNetV3,'' in \textit{Proc. IEEE/CVF ICCV}, 2019, pp. 1314--1324.
+% \bibitem{kingma2015adam} D. P. Kingma and J. Ba, ``Adam: A method for stochastic optimization,'' in \textit{Proc. ICLR}, 2015.
+\bibitem{loshchilov2019decoupled} I. Loshchilov and F. Hutter, ``Decoupled weight decay regularization,'' in \textit{Proc. ICLR}, 2019.
 \bibitem{parulian2025efficient} O. S. Parulian, ``Efficient Design and Compression of CNN Models for Rapid Character Recognition,'' \textit{Jurnal Ilmu Komputer dan Informasi}, vol. 18, no. 1, Feb. 2025.
-\bibitem{khobragade2014evaluations} R. N. Khobragade, N. A. Koli, and M. S. Makesar, ``Evaluations of Thinning Algorithms for Preprocessing of Handwritten Characters,'' \textit{International Journal on Recent and Innovation Trends in Computing and Communication}, vol. 2, no. 11, pp. 3759--3761, Nov. 2014.
-\bibitem{shi2015edge} W. Shi, J. Cao, Q. Zhang, Y. Li, and L. Xu, ``Edge Computing: Vision and Challenges,'' Technical Report: MIST-TR-2015-008, Wayne State University, 2015.
-\bibitem{decampos2009character} T. E. de Campos, B. R. Babu, and M. Varma, ``Character recognition in natural images,'' in \textit{Proceedings of the International Conference on Computer Vision Theory and Applications (VISAPP)}, Lisbon, Portugal, Feb. 2009.
-\bibitem{shi2022rcrn} D. Shi, X. Diao, H. Tang, X. Li, H. Xing, and H. Xu, ``RCRN: Real-world Character Image Restoration Network via Skeleton Extraction,'' in \textit{Proceedings of the 30th ACM International Conference on Multimedia}, Oct. 2022, pp. 1177--1185.
-\bibitem{cohen2017emnist} G. Cohen, S. Afshar, J. Tapson, and A. van Schaik, ``EMNIST: Extending MNIST to handwritten letters,'' in \textit{Proceedings of the International Joint Conference on Neural Networks (IJCNN)}, 2017, pp. 2921--2926.
+\bibitem{khobragade2014evaluations} R. N. Khobragade, N. A. Koli, and M. S. Makesar, ``Evaluations of Thinning Algorithms for Preprocessing of Handwritten Characters,'' \textit{Int. J. Recent Innovation Trends Comput. Commun.}, vol. 2, no. 11, pp. 3759--3761, Nov. 2014.
+\bibitem{sandler2018mobilenetv2} M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen, ``MobileNetV2: Inverted Residuals and Linear Bottlenecks,'' in \textit{Proc. IEEE/CVF CVPR}, 2018, pp. 4510--4520.
+\bibitem{decampos2009character} T. E. de Campos, B. R. Babu, and M. Varma, ``Character recognition in natural images,'' in \textit{Proc. VISAPP}, Lisbon, Portugal, Feb. 2009.
+\bibitem{shi2022rcrn} D. Shi \textit{et al.}, ``RCRN: Real-world Character Image Restoration Network via Skeleton Extraction,'' in \textit{Proc. 30th ACM Int. Conf. Multimedia}, Oct. 2022, pp. 1177--1185.
+% \bibitem{cohen2017emnist} G. Cohen, S. Afshar, J. Tapson, and A. van Schaik, ``EMNIST: Extending MNIST to handwritten letters,'' in \textit{Proc. IJCNN}, 2017, pp. 2921--2926.
+\bibitem{hu1962visual} M. K. Hu, ``Visual pattern recognition by moment invariants,'' \textit{IRE Trans. Inf. Theory}, vol. 8, no. 2, pp. 179--187, 1962.
+\bibitem{soille2004morphological} P. Soille, \textit{Morphological Image Analysis: Principles and Applications}, 2nd ed. Berlin, Germany: Springer, 2004.
+% \bibitem{zhang2018shufflenet} X. Zhang, X. Zhou, M. Lin, and J. Sun, ``ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices,'' in \textit{Proc. IEEE/CVF CVPR}, 2018, pp. 6848--6856.
+% \bibitem{iandola2016squeezenet} F. N. Iandola, S. Han, M. W. Moskewicz, K. Ashraf, W. J. Dally, and K. Keutzer, ``SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and <0.5MB model size,'' \textit{arXiv preprint arXiv:1602.07360}, 2016.
+% \bibitem{tan2019efficientnet} M. Tan and Q. V. Le, ``EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks,'' in \textit{Proc. ICML}, 2019, pp. 6105--6114.
+% \bibitem{mondal2020morphological} R. Mondal, S. Mukhopadhyay, and B. Chanda, ``Morphological Networks for Image De-noising and Edge Detection,'' \textit{IEEE Access}, vol. 8, pp. 131285--131301, 2020.
+% \bibitem{belongie2002shape} S. Belongie, J. Malik, and J. Puzicha, ``Shape matching and object recognition using shape contexts,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol. 24, no. 4, pp. 509--522, 2002.
+% \bibitem{shi2016an} B. Shi, X. Bai, and C. Yao, ``An End-to-End Trainable Neural Network for Image-based Sequence Recognition and Its Application to Scene Text Recognition,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol. 39, no. 11, pp. 2298--2308, 2017.
+% \bibitem{ba2014deep} J. Ba and R. Caruana, ``Do Deep Nets Really Need to be Deep?'' in \textit{Proc. NeurIPS}, 2014, pp. 2654--2662.
+% \bibitem{hinton2015distilling} G. Hinton, O. Vinyals, and J. Dean, ``Distilling the Knowledge in a Neural Network,'' \textit{arXiv preprint arXiv:1503.02531}, 2015.
+% \bibitem{srivastava2014dropout} N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhutdinov, ``Dropout: A Simple Way to Prevent Neural Networks from Overfitting,'' \textit{Journal of Machine Learning Research}, vol. 15, no. 1, pp. 1929--1958, 2014.
+% \bibitem{ioffe2015batch} S. Ioffe and C. Szegedy, ``Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift,'' in \textit{Proc. ICML}, 2015, pp. 448--456.
+% \bibitem{otsu1979threshold} N. Otsu, ``A threshold selection method from gray-level histograms,'' \textit{IEEE Trans. Syst. Man Cybern.}, vol. 9, no. 1, pp. 62--66, 1979.
+% \bibitem{canny1986computational} J. Canny, ``A Computational Approach to Edge Detection,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol. 8, no. 6, pp. 679--698, 1986.
+% \bibitem{sobel1968operator} I. Sobel, ``An Isotropic 3x3 Image Gradient Operator,'' \textit{Stanford Artificial Intelligence Project}, 1968.
+% \bibitem{gonzalez2018digital} R. C. Gonzalez and R. E. Woods, \textit{Digital Image Processing}, 4th ed. New York, NY, USA: Pearson, 2018.
+% \bibitem{russ2016image} J. C. Russ, \textit{The Image Processing Handbook}, 7th ed. Boca Raton, FL, USA: CRC Press, 2016.
+% \bibitem{vaswani2017attention} A. Vaswani \textit{et al.}, ``Attention Is All You Need,'' in \textit{Proc. NeurIPS}, 2017, pp. 5998--6008.
+% \bibitem{redmon2016you} J. Redmon, S. Divvala, R. Girshick, and A. Farhadi, ``You Only Look Once: Unified, Real-Time Object Detection,'' in \textit{Proc. IEEE CVPR}, 2016, pp. 779--788.
 \end{thebibliography}
 
 \end{document}

@@ -1,0 +1,9 @@
+{
+  "parameters": 1168382,
+  "onnx_size_mb": 0.0200958251953125,
+  "estimated_flops_m": 80.005632,
+  "pytorch_cpu_latency_ms": 5.297687432030216,
+  "pytorch_cpu_throughput": 188.7616083111897,
+  "onnxruntime_cpu_latency_ms": 2.3049896298907697,
+  "onnxruntime_cpu_throughput": 433.84143122908046
+}
