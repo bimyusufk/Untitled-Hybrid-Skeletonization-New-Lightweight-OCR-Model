@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_s1_s8_s3,Hybrid Skeleton S1+S8+S3,1541,1231,115,195,79.88319273199221,87.3458792991564,1.4312291000096593,0.9287664503631793

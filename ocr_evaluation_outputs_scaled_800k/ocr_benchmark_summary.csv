@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_scaled_800k,Hybrid Skeleton Scaled 800K (Dense 256),1541,1260,102,179,81.765087605451,88.38416612589228,1.972490619000041,1.2800068909799098

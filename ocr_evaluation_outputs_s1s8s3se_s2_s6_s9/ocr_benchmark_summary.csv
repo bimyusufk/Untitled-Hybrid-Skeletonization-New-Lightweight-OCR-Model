@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_s1_s8_s3_se_s2_s6_s9,Hybrid Skeleton 64x64 + S6 + S9 (Feature Fusion),1541,1259,105,177,81.70019467878001,88.51395197923426,1.910854081999787,1.2400091382217955

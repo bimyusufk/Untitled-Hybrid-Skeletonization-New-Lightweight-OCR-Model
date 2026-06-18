@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_s1_s3_cbam,Hybrid Skeleton S1+S3+CBAM,1541,1214,96,231,78.78001297858533,85.00973393900065,0.9332195999886608,0.6055935106999746

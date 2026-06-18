@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_1m_s14,Hybrid Skeleton 1M (S14: Hint Loss),1541,1232,89,220,79.9480856586632,85.72355613238157,2.3462585869999657,1.5225558643737611

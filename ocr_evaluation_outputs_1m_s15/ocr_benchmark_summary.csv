@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_1m_s15,Hybrid Skeleton 1M (S15: Multi-Scale Skip),1541,1269,88,184,82.34912394548995,88.05970149253731,2.419136963000028,1.5698487754704922

@@ -1,6 +1,0 @@
-=== EXPERIMENT S8 RESULTS SUMMARY ===
-Model: Hybrid Skeleton + S1 + S8
-Parameters: 368,894
-Chars74K Strict Accuracy: 79.56%
-Chars74K Tolerant Accuracy: 85.59%
-Average Latency: 0.4895 ms/image

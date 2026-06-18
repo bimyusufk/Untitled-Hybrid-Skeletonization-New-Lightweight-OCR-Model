@@ -1,46 +1,80 @@
-# Python caching
+# =============================================
+# Python
+# =============================================
 __pycache__/
 *.py[cod]
 *$py.class
 .ipynb_checkpoints/
 
-# Environments
+# =============================================
+# Virtual Environments
+# =============================================
 .venv/
 .venv_wsl/
 venv/
 env/
 Miniconda3-latest-Linux-x86_64.sh
 
-
-# IDE configurations
+# =============================================
+# IDE
+# =============================================
 .vscode/
 .idea/
 
-# Project checkpoints and logs
+# =============================================
+# Logs & Temp
+# =============================================
 *.log
-*.keras
-checkpoint_*.json
 texput.log
 
-# Research outputs, dry-runs, and smoke tests
-research_outputs/
-dry_run_outputs/
-smoke_test_output/
-ocr_evaluation_outputs/
-validation_output/
-
-# Temporary and auto-downloaded/generated datasets
+# =============================================
+# Large Datasets (user harus download sendiri)
+# =============================================
+datasets/raw/
 datasets/emnist/
 datasets/skeletonize/
 datasets/hole-filling/
 datasets/otsu-thresholding/
 datasets/*.npz
-*.png
 
-# Archives and transfer files
+# =============================================
+# Archives & Transfer Files
+# =============================================
 *.zip
 *.tar
 *.tar.gz
 
-# Model weights
-*.pth
+# =============================================
+# Output Eksperimen Lama (tidak diperlukan)
+# =============================================
+research_outputs/
+dry_run_outputs/
+smoke_test_output/
+validation_output/
+ocr_evaluation_outputs/
+ocr_evaluation_outputs_*/
+
+# Keep: ocr_evaluation_outputs_super_hybrid/
+# (berisi hasil dan bobot model terbaik)
+!ocr_evaluation_outputs_super_hybrid/
+
+# =============================================
+# Legacy / Deployment Prep
+# =============================================
+vastai_prep/
+vastai_transfer_*.zip
+code.tar.gz
+*_comparison_report.txt
+optimizations_1m_comparison_report.txt
+
+# =============================================
+# Gambar sementara di root
+# =============================================
+/*.png
+
+# =============================================
+# Model weights selain yang di output folder
+# =============================================
+/*.pth
+/*.keras
+checkpoint_*.json

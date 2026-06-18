@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_s1_s8_s3_se_s2_s6_s10,Hybrid Skeleton 64x64 + S6 + S10 (Hierarchical Head),1541,1252,109,180,81.24594419208306,88.31927319922129,2.03107082500037,1.3180213011034199

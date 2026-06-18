@@ -1,2 +1,0 @@
-model_key,model_name,total_test,strict_correct,case_error_but_char_correct,total_wrong,strict_accuracy,tolerant_accuracy,total_inference_time_sec,avg_inference_time_ms
-hybrid_1m_baseline,Hybrid Skeleton 1M (Baseline),1541,1283,90,168,83.25762491888385,89.0979883192732,2.1986273009999877,1.4267536022063516
