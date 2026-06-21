@@ -62,7 +62,7 @@ IDX_TO_CHAR = {idx: char for idx, char in enumerate(CLASS_LIST)}
 IMAGE_SIZE = (64, 64)
 
 def preprocess_image(raw_path):
-    """Binarisasi Otsu + Conditional Hole Filling (lubang <= 35 piksel)"""
+    """Binarisasi Otsu (tanpa Hole Filling)"""
     img = cv2.imread(raw_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
         return None, None
@@ -81,19 +81,7 @@ def preprocess_image(raw_path):
     else:
         _, img_bin = cv2.threshold(img_resized, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         
-    img_bool = img_bin > 0
-    all_filled = ndimage.binary_fill_holes(img_bool)
-    only_holes = np.logical_xor(all_filled, img_bool)
-    labeled_holes, num_features = ndimage.label(only_holes)
-    small_holes_mask = np.zeros_like(img_bool)
-    
-    for slice_index in range(1, num_features + 1):
-        hole_area = np.sum(labeled_holes == slice_index)
-        if hole_area <= 35:
-            small_holes_mask = np.logical_or(small_holes_mask, (labeled_holes == slice_index))
-            
-    img_clean_bin = np.logical_or(img_bool, small_holes_mask).astype(np.uint8) * 255
-    return img_clean_bin, None
+    return img_bin, None
 
 def extract_super_features(img_bin):
     """
