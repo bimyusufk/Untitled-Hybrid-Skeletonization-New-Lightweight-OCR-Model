@@ -68,7 +68,12 @@ def preprocess_image_pipeline(raw_path, use_gradient=True):
         _, img_bin = cv2.threshold(img_resized, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return img_bin
 
-def load_binary_dataset_custom(csv_path="datasets/annotations.csv", raw_base_dir="/mnt/c/Users/Unpad-hci/Documents/Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model/datasets/raw"):
+def load_binary_dataset_custom(csv_path="datasets/annotations.csv", raw_base_dir="datasets/raw"):
+    if not os.path.exists(raw_base_dir):
+        alt_path = "/mnt/c/Users/Unpad-hci/Documents/Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model/datasets/raw"
+        if os.path.exists(alt_path):
+            raw_base_dir = alt_path
+            
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"Annotation file not found at: {csv_path}")
     df = pd.read_csv(csv_path)

@@ -61,7 +61,12 @@ def preprocess_image_with_threshold(raw_path, hole_threshold):
     img_clean_bin = np.logical_or(img_bool, small_holes_mask).astype(np.uint8) * 255
     return img_clean_bin, None
 
-def load_binary_dataset_with_threshold(hole_threshold, csv_path="datasets/annotations.csv", raw_base_dir="/mnt/c/Users/Unpad-hci/Documents/Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model/datasets/raw"):
+def load_binary_dataset_with_threshold(hole_threshold, csv_path="datasets/annotations.csv", raw_base_dir="datasets/raw"):
+    if not os.path.exists(raw_base_dir):
+        alt_path = "/mnt/c/Users/Unpad-hci/Documents/Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model/datasets/raw"
+        if os.path.exists(alt_path):
+            raw_base_dir = alt_path
+
     print(f"Loading raw dataset from {csv_path} with threshold {hole_threshold}...")
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"Annotation file not found at: {csv_path}")

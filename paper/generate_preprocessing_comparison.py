@@ -7,7 +7,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # Paths
-RAW_DIR = r"C:\Users\Unpad-hci\Documents\Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model\datasets\raw"
+RAW_DIR = "datasets/raw"
+if not os.path.exists(RAW_DIR):
+    if os.path.exists("../datasets/raw"):
+        RAW_DIR = "../datasets/raw"
+    else:
+        alt_path = r"C:\Users\Unpad-hci\Documents\Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model\datasets\raw"
+        if os.path.exists(alt_path):
+            RAW_DIR = alt_path
+
 OUTPUT_PATH = "../ocr_evaluation_outputs_super_hybrid/preprocessing_comparison.png"
 IMAGE_SIZE = (64, 64)
 

@@ -5,11 +5,20 @@ import scipy.ndimage as ndimage
 import matplotlib.pyplot as plt
 
 def generate_figure():
-    raw_dir = r"C:\Users\Unpad-hci\Documents\Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model\datasets\raw"
+    raw_dir = "datasets/raw"
+    if not os.path.exists(raw_dir):
+        alt_path = r"C:\Users\Unpad-hci\Documents\Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model\datasets\raw"
+        if os.path.exists(alt_path):
+            raw_dir = alt_path
+        else:
+            raise FileNotFoundError(f"Raw dataset folder not found at {raw_dir} or {alt_path}")
+            
     sample_folder = os.path.join(raw_dir, "Sample012") # 'B' or 'A'
     if not os.path.exists(sample_folder):
         # find first available sample
         samples = [d for d in os.listdir(raw_dir) if d.startswith("Sample")]
+        if not samples:
+            raise FileNotFoundError(f"No sample folders found in {raw_dir}")
         sample_folder = os.path.join(raw_dir, samples[10]) # something not 0
         
     img_name = [f for f in os.listdir(sample_folder) if f.endswith('.png')][0]
