@@ -2,13 +2,12 @@ import os
 import numpy as np
 import cv2
 import scipy.ndimage as ndimage
-from skimage.morphology import skeletonize
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 # Paths
-RAW_DIR = "../datasets/raw"
+RAW_DIR = r"C:\Users\Unpad-hci\Documents\Untitled-Hybrid-Skeletonization-New-Lightweight-OCR-Model\datasets\raw"
 OUTPUT_PATH = "../ocr_evaluation_outputs_super_hybrid/preprocessing_comparison.png"
 IMAGE_SIZE = (64, 64)
 
@@ -68,11 +67,7 @@ for row_idx, (folder_name, img_name, label) in enumerate(samples):
     img_conditioned = np.logical_or(img_bool, small_holes_mask)
     img_conditioned_v = (img_conditioned * 255).astype(np.uint8)
     
-    # 4. Skeletonization
-    img_skeleton = skeletonize(img_conditioned)
-    img_skeleton_v = (img_skeleton * 255).astype(np.uint8)
-    
-    # 5. Morphological Gradient (Kontur)
+    # 4. Morphological Gradient (Kontur)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
     img_grad = cv2.morphologyEx(img_conditioned_v, cv2.MORPH_GRADIENT, kernel)
     
@@ -85,16 +80,16 @@ for row_idx, (folder_name, img_name, label) in enumerate(samples):
     axes[row_idx, 0].text(-15, 32, f"Label: {label}", fontsize=11, fontweight='bold', va='center', ha='right')
     
     # Col 2: Clean Binary
-    axes[row_idx, 1].imshow(img_conditioned_v, cmap='gray')
+    axes[row_idx, 1].imshow(img_biner, cmap='gray')
     axes[row_idx, 1].axis('off')
     if row_idx == 0:
         axes[row_idx, 1].set_title("2. Clean Binary", fontsize=12, pad=10)
         
-    # Col 3: Skeletonized
-    axes[row_idx, 2].imshow(img_skeleton_v, cmap='gray')
+    # Col 3: Hole-Filling
+    axes[row_idx, 2].imshow(img_conditioned_v, cmap='gray')
     axes[row_idx, 2].axis('off')
     if row_idx == 0:
-        axes[row_idx, 2].set_title("3. Skeletonized (1px)", fontsize=12, pad=10)
+        axes[row_idx, 2].set_title("3. Hole-Filling", fontsize=12, pad=10)
         
     # Col 4: Morphological Gradient
     axes[row_idx, 3].imshow(img_grad, cmap='gray')

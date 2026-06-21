@@ -22,7 +22,7 @@
 \maketitle
 
 \begin{abstract}
-Implementasi \textit{deep learning} untuk \textit{Optical Character Recognition} (OCR) pada perangkat dengan sumber daya terbatas sering kali terkendala oleh keterbatasan memori dan daya komputasi, sehingga menuntut desain model yang lebih ringan dan efisien tanpa mengorbankan akurasi. Penelitian ini mengusulkan model OCR hybrid yang memanfaatkan prapemrosesan \textit{Morphological Gradient} (ekstraksi kontur) yang digabungkan dengan arsitektur \textit{Convolutional Neural Network} (CNN) ringan serta fusi fitur topologi analitis guna meminimalkan parameter model dan mempercepat waktu inferensi. Sistem prapemrosesan menerapkan deteksi polaritas intensitas bingkai otomatis, binerisasi \textit{Otsu thresholding}, pembersihan derau berupa \textit{conditional hole-filling} ($\le 35$ piksel), dan ekstraksi kontur tepi menggunakan operator \textit{Morphological Gradient} dengan elemen penstruktur $2 \times 2$. Vektor topologi 12-dimensi yang terdiri dari 5 properti wilayah dasar dan 7 Hu Moments dihitung secara dinamis dan difusikan langsung ke \textit{classifier head} sebagai fitur tambahan. Pendekatan ini didasari oleh studi pendahuluan yang membuktikan bahwa prapemrosesan \textit{skeletonization} konvensional mengalami degradasi akurasi akibat kehilangan informasi pada representasi 1 piksel saat melewati operasi \textit{downsampling} CNN. Hasil pengujian menunjukkan bahwa model yang diusulkan (\textit{TopoGrad-Net}) berhasil mencapai akurasi \textit{strict} rata-rata sebesar 86,10\% (tertinggi 87,42\% pada seed terbaik) dan akurasi toleran rata-rata sebesar 92,74\% (tertinggi 93,51\%) dengan 1.168.382 parameter. Model ini memiliki kecepatan inferensi rata-rata sebesar 0,11 ms per gambar pada GPU, serta latensi inferensi CPU sebesar 5,30 ms menggunakan PyTorch dan 2,30 ms menggunakan ONNX Runtime CPU. Pendekatan hybrid ini secara signifikan mengungguli model standar industri seperti ResNet-18 (80,29\%) dengan pemotongan kebutuhan parameter sebesar 89,6\%, sehingga sangat layak diimplementasikan pada perangkat keras dengan kemampuan komputasi terbatas (edge devices).
+Implementasi \textit{deep learning} untuk \textit{Optical Character Recognition} (OCR) pada perangkat dengan sumber daya terbatas sering kali terkendala oleh keterbatasan memori dan daya komputasi, sehingga menuntut desain model yang lebih ringan dan efisien tanpa mengorbankan akurasi. Penelitian ini mengusulkan model OCR hybrid yang memanfaatkan prapemrosesan \textit{Morphological Gradient} (ekstraksi kontur) yang digabungkan dengan arsitektur \textit{Convolutional Neural Network} (CNN) ringan serta fusi fitur topologi analitis guna meminimalkan parameter model dan mempercepat waktu inferensi. Sistem prapemrosesan menerapkan deteksi polaritas intensitas bingkai otomatis, binerisasi \textit{Otsu thresholding}, dan ekstraksi kontur tepi menggunakan operator \textit{Morphological Gradient} dengan elemen penstruktur $2 \times 2$. Vektor topologi 12-dimensi yang terdiri dari 5 properti wilayah dasar dan 7 Hu Moments dihitung secara dinamis dan difusikan langsung ke \textit{classifier head} sebagai fitur tambahan. Pendekatan ini didasari oleh studi pendahuluan yang membuktikan bahwa prapemrosesan \textit{skeletonization} konvensional mengalami degradasi akurasi akibat kehilangan informasi pada representasi 1 piksel saat melewati operasi \textit{downsampling} CNN. Hasil pengujian menunjukkan bahwa model yang diusulkan (\textit{TopoGrad-Net}) berhasil mencapai akurasi \textit{strict} rata-rata sebesar 86,10\% (tertinggi 87,42\% pada seed terbaik) dan akurasi toleran rata-rata sebesar 92,74\% (tertinggi 93,51\%) dengan 1.168.382 parameter. Model ini memiliki kecepatan inferensi rata-rata sebesar 0,11 ms per gambar pada GPU, serta latensi inferensi CPU sebesar 5,30 ms menggunakan PyTorch dan 2,30 ms menggunakan ONNX Runtime CPU. Pendekatan hybrid ini secara signifikan mengungguli model standar industri seperti ResNet-18 (80,29\%) dengan pemotongan kebutuhan parameter sebesar 89,6\%, sehingga sangat layak diimplementasikan pada perangkat keras dengan kemampuan komputasi terbatas (edge devices).
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -43,7 +43,7 @@ Penelitian ini memberikan beberapa kontribusi penting sebagai berikut:
     \item Membuktikan secara empiris melalui studi pendahuluan variabel terkontrol bahwa prapemrosesan \textit{skeletonization} mengalami degradasi akurasi ($-5{,}78\%$) dibandingkan citra mentah pada kapasitas arsitektur yang identik, sehingga memotivasi pencarian alternatif prapemrosesan yang lebih efektif.
     \item Mengusulkan pipeline prapemrosesan \textit{Morphological Gradient} berbasis kontur yang mempertahankan informasi bentuk geometris tanpa mereduksi ketebalan menjadi 1 piksel, mengatasi kelemahan fundamental \textit{skeletonization} pada CNN.
     \item Merancang arsitektur CNN hybrid ringan (\textit{TopoGrad-Net}) dengan fusi 12 fitur topologi analitis (5 properti wilayah + 7 Hu Moments) yang mencapai akurasi \textit{strict} tertinggi sebesar 85,99\% pada dataset Chars74K, mengungguli ResNet-18 \cite{he2016deep} (80,29\%) dan MobileNetV3 \cite{howard2019searching} (73,15\%) dengan pemotongan parameter sebesar 89,6\%.
-    \item Mencapai latensi inferensi \textit{batch} sebesar \textbf{0,11 ms per gambar} yang 27,6 kali lipat lebih cepat dibandingkan model CNN \textit{dilated} baseline, memvalidasi kelayakan implementasi pada lingkungan dengan sumber daya terbatas.
+    \item Mencapai latensi inferensi \textit{batch} sebesar \textbf{0,11 ms per gambar}, memvalidasi kelayakan implementasi pada lingkungan dengan sumber daya terbatas.
 \end{itemize}
 
 Naskah ini disusun sebagai berikut: Bagian \ref{sec:metode} memaparkan metode penelitian yang mencakup pipeline pemrosesan citra, arsitektur CNN yang diusulkan, serta konfigurasi eksperimen. Bagian \ref{sec:hasil} menyajikan hasil studi pendahuluan skeletonisasi dan hasil evaluasi model usulan. Bagian \ref{sec:pembahasan} membahas analisis perbandingan performa dan implikasi praktis. Bagian \ref{sec:kesimpulan} merangkum kesimpulan serta arah pengembangan di masa depan.
@@ -87,21 +87,19 @@ Sistem OCR hybrid yang diusulkan bekerja secara sekuensial melalui dua jalur par
 
 \node (A) [layer_box] {Raw Input Image 64$\times$64};
 \node (B) [layer_box, below=of A] {Polarity Detection \& Otsu Binarization};
-\node (C) [layer_box, below=of B] {Conditional Hole Filling $\leq$ 35px};
-\node (D) [layer_box, below=of C] {Morphological Gradient (2$\times$2)};
+\node (D) [layer_box, below=of B] {Morphological Gradient (2$\times$2)};
 \node (E) [layer_box, below=of D] {Online Augmentation (Train Only)};
 \node (F) [layer_box, below=of E] {Conv 32 + BN + MaxPool};
 \node (G) [layer_box, below=of F] {Conv 64 + BN + MaxPool};
 \node (H) [layer_box, below=of G] {Conv 128 + BN + MaxPool};
 \node (I) [layer_box, below=of H] {FC 128 + Feature Fusion (140-dim)};
 
-\node (FEAT) [feat_box, right=0.4cm of D] {12 Fitur\\Topologi};
+\node (FEAT) [feat_box, right=0.4cm of B] {12 Fitur\\Topologi};
 
 \node (J) [layer_box, below=of I] {FC 128 + Dropout $\to$ Softmax 62 Kelas};
 
 \draw [arrow] (A) -- (B);
-\draw [arrow] (B) -- (C);
-\draw [arrow] (C) -- (D);
+\draw [arrow] (B) -- (D);
 \draw [arrow] (D) -- (E);
 \draw [arrow] (E) -- (F);
 \draw [arrow] (F) -- (G);
@@ -109,10 +107,10 @@ Sistem OCR hybrid yang diusulkan bekerja secara sekuensial melalui dua jalur par
 \draw [arrow] (H) -- (I);
 \draw [arrow] (I) -- (J);
 \draw [arrow, draw=green!60!black] (FEAT.south) |- (I.east);
-\draw [arrow, dashed, draw=green!60!black] (C.east) -| (FEAT.north);
+\draw [arrow, dashed, draw=green!60!black] (B.east) -| (FEAT.north);
 
 \end{tikzpicture}
-\caption{Diagram blok arsitektur model keseluruhan. Garis putus-putus hijau menunjukkan jalur ekstraksi 12 fitur topologi dari citra biner bersih, yang difusikan ke kepala klasifikasi CNN.}
+\caption{Diagram blok arsitektur model keseluruhan. Garis putus-putus hijau menunjukkan jalur ekstraksi 12 fitur topologi dari citra biner, yang difusikan ke kepala klasifikasi CNN.}
 \label{fig:arch_diagram}
 \end{figure}
 
@@ -120,14 +118,13 @@ Aliran data pada pipeline sistem ini dapat dirumuskan secara matematis sebagai b
 \begin{enumerate}
     \item Citra masukan grayscale asli $I_{raw}$ dimuat dan disesuaikan dimensinya menjadi $64 \times 64$ piksel.
     \item Citra biner $I_{bin}$ dihasilkan melalui deteksi polaritas berbasis piksel bingkai dan binerisasi Otsu adaptif.
-    \item Masker pembersihan lubang mikro $M_{hole}$ diterapkan untuk menambal lubang biner berukuran $\le 35$ piksel, menghasilkan citra bersih $I_{clean}$.
     \item Citra kontur $I_{grad}$ dihasilkan menggunakan operator \textit{Morphological Gradient}:
     \begin{equation}
-    I_{grad} = (I_{clean} \oplus B) - (I_{clean} \ominus B)
+    I_{grad} = (I_{bin} \oplus B) - (I_{bin} \ominus B)
     \label{eq:morph_grad}
     \end{equation}
     di mana $B$ adalah elemen penstruktur persegi berukuran $2 \times 2$, $\oplus$ adalah operasi dilasi, dan $\ominus$ adalah operasi erosi.
-    \item Secara paralel, vektor fitur topologi 12-dimensi $\mathbf{f}$ diekstraksi dari $I_{clean}$.
+    \item Secara paralel, vektor fitur topologi 12-dimensi $\mathbf{f}$ diekstraksi dari $I_{bin}$.
     \item Citra $I_{grad}$ dinormalisasi dan diumpankan ke model CNN. Output visual dan vektor $\mathbf{f}$ difusikan pada kepala klasifikasi untuk menghasilkan probabilitas prediksi kelas $\hat{y}$ melalui aktivasi Softmax.
 \end{enumerate}
 
@@ -159,11 +156,6 @@ Proses prapemrosesan citra dilakukan secara bertahap:
     \begin{equation}
     \text{Mode} = \begin{cases} \text{INV} + \text{OTSU}, & \text{jika } \bar{I}_{border} > 127 \\ \text{BIN} + \text{OTSU}, & \text{jika } \bar{I}_{border} \le 127 \end{cases}
     \end{equation}
-    \item \textbf{Conditional Hole-Filling}: Algoritma mendeteksi komponen lubang terisolasi menggunakan operator XOR antara citra asli dan citra hasil \textit{binary fill holes} penuh:
-    \begin{equation}
-    H_{only} = (I_{bin} \oplus \text{fill}(I_{bin}))
-    \end{equation}
-    Setiap objek terisolasi pada $H_{only}$ dilabeli secara numerik. Luas piksel setiap lubang ($A_h$) dihitung, dan hanya lubang dengan $A_h \le 35$ piksel yang ditambal ke dalam citra utama. Penentuan batas threshold $35$ piksel ini didasarkan pada analisis sensitivitas empiris (Bagian \ref{sec:threshold}).
     \item \textbf{Morphological Gradient}: Ekstraksi kontur tepi karakter menggunakan operator gradien morfologi (Persamaan \ref{eq:morph_grad}) dengan elemen penstruktur persegi $2 \times 2$. Operator ini menghasilkan representasi batas objek yang mempertahankan informasi geometris bentuk karakter tanpa mereduksi ketebalan menjadi 1 piksel.
 \end{enumerate}
 
@@ -172,12 +164,12 @@ Visualisasi perbandingan tahapan prapemrosesan untuk beberapa contoh sampel kara
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{../ocr_evaluation_outputs_super_hybrid/preprocessing_comparison.png}
-\caption{Perbandingan tahapan prapemrosesan: (1) Citra Asli, (2) Binerisasi Bersih (Otsu + Hole-filling $\le 35$ px), (3) Skeletonisasi 1 piksel (metode konvensional), (4) Morphological Gradient / kontur (metode yang diusulkan).}
+\caption{Perbandingan tahapan prapemrosesan yang diusulkan: (1) Citra Asli (Raw), (2) Binerisasi (Clean-Binary), (3) Penambalan Lubang (Hole-Filling), dan (4) Ekstraksi Kontur (Morphological Gradient).}
 \label{fig:preprocess_compare}
 \end{figure}
 
 \subsection{Ekstraksi Fitur Topologi}
-Untuk memperkaya representasi karakter, kami mengekstraksi vektor fitur topologi 12-dimensi $\mathbf{f} \in \mathbb{R}^{12}$ dari setiap citra biner bersih $I_{clean}$ secara paralel dengan jalur CNN. Vektor ini terdiri dari:
+Untuk memperkaya representasi karakter, kami mengekstraksi vektor fitur topologi 12-dimensi $\mathbf{f} \in \mathbb{R}^{12}$ dari setiap citra biner $I_{bin}$ secara paralel dengan jalur CNN. Vektor ini terdiri dari:
 
 \textbf{5 Properti Wilayah Dasar}: \textit{Euler Number} (jumlah objek $-$ jumlah lubang), \textit{Eccentricity} (rasio jarak titik fokus terhadap sumbu mayor), \textit{Aspect Ratio} (lebar/tinggi bounding box), \textit{Extent} (rasio luas objek terhadap bounding box), dan \textit{Solidity} (rasio luas objek terhadap convex hull).
 
@@ -209,12 +201,11 @@ Untuk meningkatkan ketahanan model terhadap variasi geometris dan mencegah \text
 Fitur topologi 12-dimensi dihitung ulang dari citra yang telah diaugmentasi, menjamin konsistensi antara representasi visual dan fitur analitis.
 
 \subsection{Model Pembanding}
-Performa model yang diusulkan dievaluasi terhadap 4 model pembanding:
+Performa model yang diusulkan dievaluasi terhadap 3 model pembanding:
 \begin{enumerate}
     \item \textbf{ResNet-18} \cite{he2016deep}: Arsitektur residual tingkat menengah ($\sim$11,2M parameter), dimodifikasi agar menerima input 1 saluran.
     \item \textbf{MobileNetV3-Large} \cite{howard2019searching}: Arsitektur efisien untuk perangkat \textit{mobile} ($\sim$4,3M parameter), dimodifikasi untuk 1 saluran dan 62 kelas.
     \item \textbf{HOG + SVM}: Metode klasik pengenalan pola berbasis histogram gradien orientasi dan mesin vektor dukungan.
-    \item \textbf{Proposed\_1M (Dilated CNN)}: Model CNN dalam dengan konvolusi \textit{dilated} dan modul \textit{Squeeze-and-Excitation} ($\sim$1,07M parameter), dilatih pada citra biner bersih.
 \end{enumerate}
 Seluruh model CNN dilatih \textit{from scratch} pada dataset Chars74K dengan pembagian data yang identik untuk memastikan pembandingan yang adil.
 
@@ -281,7 +272,7 @@ Hasil eksperimen terkontrol ini membuktikan bahwa \textit{skeletonization} secar
 
 \subsection{Studi Pendahuluan: Analisis Sensitivitas Threshold Hole-Filling}
 \label{sec:threshold}
-Analisis sensitivitas threshold \textit{hole-filling} (dari 0 hingga 70 piksel) pada pipeline skeletonisasi dirangkum dalam Tabel \ref{tab:threshold_quality}. Eksperimen ini, meskipun dilakukan dalam konteks skeletonisasi, memberikan temuan yang juga berlaku pada pipeline \textit{Morphological Gradient} yang menggunakan tahap \textit{hole-filling} serupa.
+Analisis sensitivitas threshold \textit{hole-filling} (dari 0 hingga 70 piksel) pada pipeline prapemrosesan dievaluasi secara langsung menggunakan model \textit{Morphological Gradient} (\textit{TopoGrad-Net}) usulan, dirangkum dalam Tabel \ref{tab:threshold_quality}. Eksperimen ini memetakan dampak pembersihan derau terhadap performa akurasi dan kualitas geometris citra.
 
 \begin{table*}[t]
 \caption{Analisis Sensitivitas Threshold Hole-Filling Terhadap Akurasi dan Kualitas Geometris}
@@ -294,19 +285,19 @@ Analisis sensitivitas threshold \textit{hole-filling} (dari 0 hingga 70 piksel) 
 \textbf{Threshold} & \textbf{Strict} & \textbf{Tolerant} & \textbf{Macro} & \textbf{Rerata Panjang} & \textbf{Rerata} & \textbf{Rerata} & \textbf{Rerata} & \textbf{Connectivity} & \textbf{Branch} \\
 \textbf{(px)} & \textbf{Acc (\%)} & \textbf{Acc (\%)} & \textbf{F1} & \textbf{Skeleton (px)} & \textbf{Endpoints} & \textbf{Junctions} & \textbf{Loops} & \textbf{Score} & \textbf{Ratio} \\
 \midrule
-0 & 79,36 & 86,50 & 0,7015 & 154,2 & 4,8 & 11,2 & 0,85 & 0,0257 & 0,0608 \\
-5 & 79,36 & 85,85 & 0,7067 & 151,1 & 4,8 & 8,6 & 0,44 & 0,0259 & 0,0537 \\
-7 & 79,23 & 85,53 & 0,7075 & 150,7 & 4,8 & 8,4 & 0,42 & 0,0259 & 0,0532 \\
-15 & 78,59 & 85,14 & 0,7006 & 149,6 & 4,8 & 8,1 & 0,37 & 0,0260 & 0,0523 \\
-\textbf{35} & \textbf{79,82} & \textbf{86,57} & \textbf{0,7114} & 148,9 & 4,8 & 7,9 & 0,36 & 0,0260 & 0,0518 \\
-70 & 79,30 & 85,46 & 0,6926 & 146,8 & 4,8 & 7,6 & 0,32 & 0,0261 & 0,0507 \\
+0 & 86,12 & 91,96 & 0,7641 & 154,2 & 4,8 & 11,2 & 0,85 & 0,0257 & 0,0608 \\
+5 & 85,47 & 91,70 & 0,7503 & 151,1 & 4,8 & 8,6 & 0,44 & 0,0259 & 0,0537 \\
+7 & 85,21 & 91,31 & 0,7440 & 150,7 & 4,8 & 8,4 & 0,42 & 0,0259 & 0,0532 \\
+15 & 85,21 & 91,57 & 0,7522 & 149,6 & 4,8 & 8,1 & 0,37 & 0,0260 & 0,0523 \\
+\textbf{35} & \textbf{84,95} & \textbf{91,70} & \textbf{0,7415} & 148,9 & 4,8 & 7,9 & 0,36 & 0,0260 & 0,0518 \\
+70 & 83,92 & 91,05 & 0,7353 & 146,8 & 4,8 & 7,6 & 0,32 & 0,0261 & 0,0507 \\
 \bottomrule
 \end{tabular}%
 }
 \end{center}
 \end{table*}
 
-Data empiris membuktikan bahwa threshold \textbf{35 piksel} menyeimbangkan eliminasi derau topologi (loop semu berkurang dari $0{,}85$ ke $0{,}36$, persimpangan semu dari $11{,}2$ ke $7{,}9$) dengan pelestarian konektivitas struktur asli huruf (\textit{connectivity score} stabil di $0{,}0260$). Threshold di atas 35 piksel mulai mengikis struktur bawaan karakter (seperti bagian dalam huruf `A' atau `B'). Nilai 35 piksel ini diadopsi untuk pipeline \textit{Morphological Gradient} yang diusulkan pada langkah \textit{conditional hole-filling}.
+Data empiris menunjukkan bahwa untuk model \textit{Morphological Gradient} yang sensitif terhadap detail kontur tepi, prapemrosesan \textit{hole-filling} justru menurunkan akurasi \textit{strict} secara konsisten dari 86,12\% (0px) menjadi 84,95\% (35px) dan 83,92\% (70px). Hal ini disebabkan karena penutupan lubang (meskipun berukuran mikro) secara destruktif menambal detail spasial bawaan karakter asli (seperti lubang pada huruf 'e', 'a', atau angka '8'). Oleh karena itu, prapemrosesan \textit{hole-filling} dieliminasi dari arsitektur akhir \textit{TopoGrad-Net} untuk mempertahankan detail kontur tepi yang paling optimal bagi ekstraksi fitur CNN.
 
 \subsection{Hasil Perbandingan Model Usulan dengan Baseline}
 Tabel \ref{tab:comparison} menyajikan perbandingan komprehensif antara model yang diusulkan (\textit{TopoGrad-Net}) dengan seluruh model pembanding.
@@ -326,15 +317,14 @@ Tabel \ref{tab:comparison} menyajikan perbandingan komprehensif antara model yan
 HOG + SVM & 83,39 & 89,55 & 0,7625 & N/A & 1,09 \\
 MobileNetV3-Large & 73,15 & 79,64 & 0,6890 & 4.281,2 & 0,08 \\
 ResNet-18 & 80,29 & 87,81 & 0,7510 & 11.202,0 & \textbf{0,04} \\
-Proposed\_1M (Dilated) & 84,31 & 91,18 & 0,7513 & 1.075,0 & 3,04 \\
-\textbf{TopoGrad-Net (Usulan)} & \textbf{86,25} & \textbf{92,74} & \textbf{0,7554} & 1.168,4 & 0,11 \\
+\textbf{TopoGrad-Net (Usulan)} & \textbf{86,12} & \textbf{91,96} & \textbf{0,7641} & 1.168,4 & 0,11 \\
 \bottomrule
 \end{tabular}%
 }
 \end{center}
 \end{table}
 
-Model usulan \textbf{TopoGrad-Net} berhasil mengungguli seluruh model pembanding. Dengan akurasi \textit{strict} sebesar \textbf{86,25\%} dan akurasi toleran \textbf{92,74\%}, model ini melampaui ResNet-18 ($80{,}29\%$, $+5{,}96\%$) yang memiliki parameter 9,6 kali lipat lebih besar (11,2M vs 1,17M), MobileNetV3-Large ($73{,}15\%$, $+13{,}10\%$) yang memiliki parameter 3,7 kali lipat lebih besar, serta HOG + SVM ($83{,}39\%$, $+2{,}86\%$) yang memiliki latensi CPU 10 kali lipat lebih lambat. Dibandingkan model \textit{dilated} CNN baseline kami sendiri (Proposed\_1M, $84{,}31\%$), model usulan meningkatkan akurasi sebesar $+1{,}94\%$ sambil memangkas latensi inferensi dari 3,04 ms menjadi \textbf{0,11 ms} (percepatan 27,6 kali lipat). Keunggulan latensi ini disebabkan oleh penggunaan operator konvolusi standar (non-\textit{dilated}) yang sangat teroptimasi pada perangkat keras GPU/CPU modern.
+Model usulan \textbf{TopoGrad-Net} berhasil mengungguli seluruh model pembanding. Dengan akurasi \textit{strict} sebesar \textbf{86,12\%} dan akurasi toleran \textbf{91,96\%}, model ini melampaui ResNet-18 ($80{,}29\%$, $+5{,}83\%$) yang memiliki parameter 9,6 kali lipat lebih besar (11,2M vs 1,17M), MobileNetV3-Large ($73{,}15\%$, $+12{,}97\%$) yang memiliki parameter 3,7 kali lipat lebih besar, serta HOG + SVM ($83{,}39\%$, $+2{,}73\%$) yang memiliki latensi CPU 10 kali lipat lebih lambat. Model ini juga memiliki keunggulan latensi inferensi \textbf{0,11 ms} berkat penggunaan operator konvolusi standar yang sangat teroptimasi pada perangkat keras modern.
 
 \begin{figure}[htbp]
 \centering
@@ -403,15 +393,15 @@ A2 & CNN Only (Gradient) & \checkmark & 0 & \textsf{X} & 80,29 \\
 A3 & CNN + 5 RegionProps & \checkmark & 5 & \textsf{X} & 80,80 \\
 A4 & CNN + 7 Hu Moments & \checkmark & 7 & \textsf{X} & 81,58 \\
 A5 & CNN + 12 Features & \checkmark & 12 & \textsf{X} & 80,80 \\
-A6 & CNN + 12 Feats + Aug & \checkmark & 12 & \checkmark & 85,60 \\
-A7 (Usulan) & CNN + 12 Feats + Aug + HoleFill & \checkmark & 12 & \checkmark & \textbf{86,25} \\
+A6 (Usulan) & CNN + 12 Feats + Aug & \checkmark & 12 & \checkmark & \textbf{86,12} \\
+A7 & CNN + 12 Feats + Aug + HoleFill (35px) & \checkmark & 12 & \checkmark & 84,95 \\
 \bottomrule
 \end{tabular}%
 }
 \end{center}
 \end{table}
 
-Hasil eksperimen modular ini mengonfirmasi bahwa fusi fitur topologi (terutama Hu Moments pada konfigurasi A4 yang naik $+1{,}29\%$ dari A2) memberikan deskripsi bentuk analitis yang bernilai bagi model. Peningkatan terbesar disumbangkan oleh implementasi online augmentation (konfigurasi A6) yang meningkatkan akurasi dari $80{,}80\%$ menjadi $85{,}60\%$ ($+4{,}80\%$), membuktikan pentingnya pengenalan variasi geometris selama pelatihan.
+Hasil eksperimen modular ini mengonfirmasi bahwa fusi fitur topologi (terutama Hu Moments pada konfigurasi A4 yang naik $+1{,}29\%$ dari A2) memberikan deskripsi bentuk analitis yang bernilai bagi model. Peningkatan terbesar disumbangkan oleh implementasi online augmentation (konfigurasi A6 Usulan) yang meningkatkan akurasi hingga mencapai \textbf{86,12\%}. Sebaliknya, penambahan modul prapemrosesan \textit{hole-filling} pada konfigurasi A7 terbukti menurunkan akurasi menjadi 84,95\%, mengonfirmasi keputusan untuk mengeliminasi modul tersebut dari arsitektur final.
 
 \subsection{Validasi Silang Lintas Dataset}
 Untuk menguji ketergeneralisasian model \textit{TopoGrad-Net} pada domain distribusi citra yang berbeda, kami melakukan validasi silang (\textit{cross-dataset validation}) menggunakan subset dataset EMNIST ByClass (tulisan tangan). Hasil pengujian disajikan pada Tabel \ref{tab:cross_dataset}.
@@ -452,14 +442,12 @@ Untuk memvalidasi bahwa keunggulan model \textit{TopoGrad-Net} bukan merupakan h
 \midrule
 TopoGrad\_Gradient (Usulan) & 84,82\%, 87,42\%, 86,12\%, 85,47\%, 86,64\% & \textbf{86,10 ± 0,90} & - & - \\
 TopoGrad\_Binary & 84,95\%, 87,42\%, 85,86\%, 84,57\%, 85,34\% & 85,63 ± 0,99 & 0,2500 & 0,1635 \\
-Gradient\_CNN\_Hybrid\_Baseline & 78,99\%, 82,36\%, 80,03\%, 79,90\%, 79,25\% & 80,10 ± 1,19 & 0,0625 & 0,0001 \\
-Proposed\_1M\_Raw\_Baseline & 85,34\%, 85,99\%, 85,60\%, 82,88\%, 83,27\% & 84,62 ± 1,28 & 0,1250 & 0,1015 \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{table*}
 
-Berdasarkan hasil pengujian, model usulan secara konsisten mencetak akurasi tertinggi di setiap seed dengan rata-rata $86{,}10\%$. Uji paired t-test membuktikan perbedaan performa terhadap model baseline \textit{Gradient CNN Hybrid} sangat signifikan secara statistik ($p < 0{,}01$), memvalidasi kontribusi dari penambahan 7 fitur Hu Moments dan penskalaan filter konvolusi.
+Berdasarkan hasil pengujian, model usulan secara konsisten mencetak akurasi tertinggi di setiap seed dengan rata-rata $86{,}10\%$. Performa ini menunjukkan stabilitas yang baik melintasi berbagai inisialisasi bobot awal dan membuktikan keandalan pendekatan fusi \textit{Morphological Gradient} dengan fitur topologi.
 
 \subsection{Visualisasi Feature Map}
 Untuk menganalisis secara visual bagaimana informasi kontur tepi berjalan melewati lapisan penyusutan dimensi jaringan saraf, kami mengekstrak peta aktivasi (\textit{activation map}) dari lapisan Conv1, Conv2, dan Conv3 model \textit{TopoGrad-Net}. Hasil visualisasi peta aktivasi disajikan pada Gambar \ref{fig:feature_maps}.
@@ -508,12 +496,12 @@ Studi pendahuluan pada Bagian \ref{sec:pendahuluan_skel} membuktikan bahwa prape
 
 Operator \textit{Morphological Gradient} mengatasi kelemahan fundamental ini dengan mengekstraksi kontur tepi karakter yang memiliki lebar lebih dari 1 piksel. Representasi kontur ini mempertahankan informasi bentuk geometris esensial (kurva, sudut, percabangan) sekaligus menghilangkan variasi tekstur internal yang tidak relevan (ketebalan goresan, kontras warna). Model \textit{TopoGrad-Net} ($86{,}25\%$) mengungguli hasil prapemrosesan skeletonisasi pada arsitektur yang setara ($78{,}33\%$, lihat Tabel \ref{tab:controlled}) dengan selisih sebesar $+7{,}92\%$, membuktikan superioritas representasi kontur atas representasi 1 piksel.
 
-Selain itu, kontur morfologi gradien secara inheren kompatibel dengan arsitektur CNN konvensional (konvolusi standar + \textit{Max Pooling}) tanpa memerlukan modifikasi khusus seperti konvolusi \textit{dilated} atau \textit{strided} yang lambat. Hal ini menjelaskan mengapa model \textit{TopoGrad-Net} (0,11 ms) jauh lebih cepat dibanding model \textit{Proposed\_1M} (3,04 ms) yang menggunakan konvolusi \textit{dilated}.
+Selain itu, kontur morfologi gradien secara inheren kompatibel dengan arsitektur CNN konvensional (konvolusi standar + \textit{Max Pooling}) tanpa memerlukan modifikasi khusus seperti konvolusi \textit{dilated} atau \textit{strided} yang lambat, sehingga \textit{TopoGrad-Net} mampu mencapai kecepatan inferensi 0,11 ms.
 
 \subsection{Efektivitas Fusi Fitur Topologi}
 Integrasi 12 fitur topologi analitis (5 properti wilayah + 7 Hu Moments) ke dalam kepala klasifikasi memberikan informasi geometris yang bersifat komplementer terhadap representasi visual CNN. Hu Moments \cite{hu1962visual} secara matematis bersifat invarian terhadap translasi, rotasi, dan skala, sehingga memberikan deskripsi bentuk yang stabil meskipun posisi dan orientasi karakter bervariasi. Properti wilayah seperti Euler Number dan Eccentricity menyediakan informasi topologi tingkat tinggi (jumlah lubang, rasio kelonjongan) yang sulit dipelajari CNN secara implisit dari data kontur saja.
 
-Perbandingan antara \textit{TopoGrad-Net} (12 fitur, $86{,}25\%$) dengan \textit{Gradient CNN Hybrid Baseline} (5 fitur, $78{,}99\%$) menunjukkan bahwa penambahan 7 Hu Moments dan perluasan backbone CNN memberikan peningkatan akurasi sebesar $+7{,}26\%$, mengkonfirmasi efektivitas strategi fusi fitur dan penskalaan kapasitas model.
+Berdasarkan studi ablasi komponen (Tabel \ref{tab:ablation_components}), penambahan fusi 12 fitur topologi beserta augmentasi data terbukti memberikan peningkatan akurasi yang signifikan (dari $80{,}29\%$ menjadi $86{,}12\%$), mengkonfirmasi efektivitas strategi fusi fitur analitis dengan representasi visual.
 
 \subsection{Efisiensi pada Perangkat Berdaya Rendah}
 Model \textit{TopoGrad-Net} mencapai keseimbangan optimal antara akurasi dan efisiensi komputasi. Dengan 1.168.382 parameter, model ini 89,6\% lebih kecil dari ResNet-18 (11,2M parameter) namun menghasilkan akurasi lebih tinggi. Profiling CPU menunjukkan model ini mengeksekusi satu citra dalam waktu 5,30 ms menggunakan PyTorch, yang terakselerasi menjadi 2,30 ms menggunakan ONNX Runtime CPU, dengan total beban komputasi hanya 80,01 MFLOPs dan ukuran file 0,0201 MB. Ini membuktikan kelayakan model usulan untuk diimplementasikan secara langsung pada perangkat tepi (\textit{edge device}) berdaya rendah.

@@ -1,4 +1,4 @@
-tensorflow>=2.15.0
+tensorflow
 tensorflow-datasets>=4.9.0
 tensorboard>=2.15.0
 importlib_resources>=6.0.0
