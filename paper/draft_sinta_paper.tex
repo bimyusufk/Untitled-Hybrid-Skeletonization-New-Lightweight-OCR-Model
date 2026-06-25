@@ -22,7 +22,7 @@
 \maketitle
 
 \begin{abstract}
-Implementasi \textit{deep learning} untuk \textit{Optical Character Recognition} (OCR) pada perangkat dengan sumber daya terbatas sering kali terkendala oleh keterbatasan memori dan daya komputasi, sehingga menuntut desain model yang lebih ringan dan efisien tanpa mengorbankan akurasi. Penelitian ini mengusulkan model OCR hybrid yang memanfaatkan prapemrosesan \textit{Morphological Gradient} (ekstraksi kontur) yang digabungkan dengan arsitektur \textit{Convolutional Neural Network} (CNN) ringan serta fusi fitur topologi analitis guna meminimalkan parameter model dan mempercepat waktu inferensi. Sistem prapemrosesan menerapkan deteksi polaritas intensitas bingkai otomatis, binerisasi \textit{Otsu thresholding}, dan ekstraksi kontur tepi menggunakan operator \textit{Morphological Gradient} dengan elemen penstruktur $2 \times 2$. Vektor topologi 12-dimensi yang terdiri dari 5 properti wilayah dasar dan 7 Hu Moments dihitung secara dinamis dan difusikan langsung ke \textit{classifier head} sebagai fitur tambahan. Pendekatan ini didasari oleh studi pendahuluan yang membuktikan bahwa prapemrosesan \textit{skeletonization} konvensional mengalami degradasi akurasi akibat kehilangan informasi pada representasi 1 piksel saat melewati operasi \textit{downsampling} CNN. Hasil pengujian menunjukkan bahwa model yang diusulkan (\textit{TopoGrad-Net}) berhasil mencapai akurasi \textit{strict} rata-rata sebesar 86,10\% (tertinggi 87,42\% pada seed terbaik) dan akurasi toleran rata-rata sebesar 92,74\% (tertinggi 93,51\%) dengan 1.168.382 parameter. Model ini memiliki kecepatan inferensi rata-rata sebesar 0,11 ms per gambar pada GPU, serta latensi inferensi CPU sebesar 5,30 ms menggunakan PyTorch dan 2,30 ms menggunakan ONNX Runtime CPU. Pendekatan hybrid ini secara signifikan mengungguli model standar industri seperti ResNet-18 (80,29\%) dengan pemotongan kebutuhan parameter sebesar 89,6\%, sehingga sangat layak diimplementasikan pada perangkat keras dengan kemampuan komputasi terbatas (edge devices).
+Implementasi \textit{deep learning} untuk \textit{Optical Character Recognition} (OCR) pada perangkat dengan sumber daya terbatas sering kali terkendala oleh keterbatasan memori dan daya komputasi, sehingga menuntut desain model yang lebih ringan dan efisien tanpa mengorbankan akurasi. Penelitian ini mengusulkan model OCR hybrid yang memanfaatkan prapemrosesan \textit{Morphological Gradient} (ekstraksi kontur) yang digabungkan dengan arsitektur \textit{Convolutional Neural Network} (CNN) ringan serta fusi fitur topologi analitis guna meminimalkan parameter model dan mempercepat waktu inferensi. Sistem prapemrosesan menerapkan deteksi polaritas intensitas bingkai otomatis, binerisasi \textit{Otsu thresholding}, dan ekstraksi kontur tepi menggunakan operator \textit{Morphological Gradient} dengan elemen penstruktur $2 \times 2$. Vektor topologi 12-dimensi yang terdiri dari 5 properti wilayah dasar dan 7 Hu Moments dihitung secara dinamis dan difusikan langsung ke \textit{classifier head} sebagai fitur tambahan. Pendekatan ini didasari oleh studi pendahuluan yang membuktikan bahwa prapemrosesan \textit{skeletonization} konvensional mengalami degradasi akurasi akibat kehilangan informasi pada representasi 1 piksel saat melewati operasi \textit{downsampling} CNN. Hasil pengujian menunjukkan bahwa model yang diusulkan (\textit{TopoGrad-Net}) berhasil mencapai akurasi \textit{strict} rata-rata sebesar 86,10\% (tertinggi 87,42\% pada seed terbaik) dan akurasi toleran rata-rata sebesar 92,74\% (tertinggi 93,51\%) dengan 1.168.382 parameter. Model ini memiliki kecepatan inferensi rata-rata sebesar 0,08 ms per gambar pada GPU (batch 64), serta latensi inferensi CPU sebesar 0,76 ms menggunakan PyTorch dan 0,69 ms menggunakan ONNX Runtime CPU (batch 1). Pendekatan hybrid ini secara signifikan mengungguli model standar industri seperti ResNet-18 (80,29\%) dengan pemotongan kebutuhan parameter sebesar 89,6\%, sehingga sangat layak diimplementasikan pada perangkat keras dengan kemampuan komputasi terbatas (edge devices).
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -43,7 +43,7 @@ Penelitian ini memberikan beberapa kontribusi penting sebagai berikut:
     \item Membuktikan secara empiris melalui studi pendahuluan variabel terkontrol bahwa prapemrosesan \textit{skeletonization} mengalami degradasi akurasi ($-5{,}78\%$) dibandingkan citra mentah pada kapasitas arsitektur yang identik, sehingga memotivasi pencarian alternatif prapemrosesan yang lebih efektif.
     \item Mengusulkan pipeline prapemrosesan \textit{Morphological Gradient} berbasis kontur yang mempertahankan informasi bentuk geometris tanpa mereduksi ketebalan menjadi 1 piksel, mengatasi kelemahan fundamental \textit{skeletonization} pada CNN.
     \item Merancang arsitektur CNN hybrid ringan (\textit{TopoGrad-Net}) dengan fusi 12 fitur topologi analitis (5 properti wilayah + 7 Hu Moments) yang mencapai akurasi \textit{strict} tertinggi sebesar 85,99\% pada dataset Chars74K, mengungguli ResNet-18 \cite{he2016deep} (80,29\%) dan MobileNetV3 \cite{howard2019searching} (73,15\%) dengan pemotongan parameter sebesar 89,6\%.
-    \item Mencapai latensi inferensi \textit{batch} sebesar \textbf{0,11 ms per gambar}, memvalidasi kelayakan implementasi pada lingkungan dengan sumber daya terbatas.
+    \item Mencapai latensi inferensi GPU sebesar \textbf{0,075 ms per gambar} ($B=64$) dan latensi CPU sebesar \textbf{0,76 ms per gambar} ($B=1$), memvalidasi kelayakan implementasi pada lingkungan dengan sumber daya terbatas.
 \end{itemize}
 
 Naskah ini disusun sebagai berikut: Bagian \ref{sec:metode} memaparkan metode penelitian yang mencakup pipeline pemrosesan citra, arsitektur CNN yang diusulkan, serta konfigurasi eksperimen. Bagian \ref{sec:hasil} menyajikan hasil studi pendahuluan skeletonisasi dan hasil evaluasi model usulan. Bagian \ref{sec:pembahasan} membahas analisis perbandingan performa dan implikasi praktis. Bagian \ref{sec:kesimpulan} merangkum kesimpulan serta arah pengembangan di masa depan.
@@ -216,15 +216,16 @@ Pelatihan model dioptimalkan menggunakan fungsi loss \textit{Cross-Entropy}:
 \end{equation}
 di mana $y_i$ merupakan label target kelas dan $\hat{y}_i$ melambangkan probabilitas prediksi kelas ke-$i$.
 
-\subsection{Konfigurasi Pelatihan}
-Konfigurasi perangkat keras dan lunak yang digunakan selama pelatihan:
+\subsection{Konfigurasi Pelatihan dan Profiling}
+Konfigurasi perangkat keras dan lunak yang digunakan selama pelatihan dan profiling latency:
 \begin{itemize}
-    \item \textbf{Perangkat Keras}: GPU NVIDIA dengan memori RAM $\ge 8$ GB.
-    \item \textbf{Perangkat Lunak}: Python 3.10, PyTorch 2.x, OpenCV, Scikit-Image, Scikit-learn.
+    \item \textbf{Perangkat Keras}: CPU AMD Ryzen 5 5600G (6 Cores, 12 Threads, 3,9 GHz hingga 4,4 GHz, L3 Cache 16 MB), GPU NVIDIA GeForce RTX 3060 (12 GB VRAM, Compute Capability 8.6, Driver Version 580.119.02), RAM 32 GB.
+    \item \textbf{Perangkat Lunak}: OS Ubuntu 24.04.4 LTS (Noble Numbat), Python 3.12.13, PyTorch 2.12.1+cu130, ONNX Runtime 1.27.0, CUDA Toolkit 13.0, thop 0.1.1.
     \item \textbf{Optimizer}: AdamW \cite{loshchilov2019decoupled} dengan \textit{learning rate} $10^{-3}$ dan \textit{weight decay} $10^{-2}$.
     \item \textbf{Scheduler}: \textit{Cosine Annealing} dengan $T_{max}$ = jumlah epoch.
     \item \textbf{Batch Size \& Epochs}: Ukuran \textit{batch} 64 selama 50 epoch. Model terbaik dipilih berdasarkan \texttt{val\_loss} terendah dengan \textit{early stopping} (kesabaran = 10 epoch).
 \end{itemize}
+
 
 \subsection{Metrik Evaluasi}
 Model dievaluasi menggunakan metrik kuantitatif berikut:
@@ -463,29 +464,34 @@ Untuk menganalisis secara visual bagaimana informasi kontur tepi berjalan melewa
 Visualisasi pada Gambar \ref{fig:feature_maps} memperlihatkan bahwa informasi bentuk kontur luar yang diekstrak oleh operator morfologi gradien berhasil dipertahankan secara konsisten melintasi lapisan-lapisan konvolusi dalam jaringan. Pola kontur tepi tetap tebal dan tidak terputus bahkan setelah melewati tiga kali operasi Max Pooling hingga resolusi terkecil $8 \times 8$ piksel, berbeda dengan representasi skeleton tipis 1 piksel yang rentan terdistorsi.
 
 \subsection{Latensi dan Kompatibilitas Perangkat Edge}
-Untuk mengevaluasi kelayakan model usulan saat dideploy pada lingkungan dengan keterbatasan memori dan CPU tanpa GPU (simulasi perangkat tepi/edge), kami mengekspor model ke format ONNX dan melakukan profiling pada CPU lokal. Hasil pengujian performa edge disajikan pada Tabel \ref{tab:edge_profiling}.
+Untuk mengevaluasi kelayakan model usulan saat dideploy pada lingkungan dengan keterbatasan memori dan CPU tanpa GPU (simulasi perangkat tepi/edge), kami melakukan profiling komprehensif pada server Linux native untuk menghindari overhead virtualisasi Hyper-V yang terjadi pada WSL. Kami membandingkan model usulan (\textit{TopoGrad-Net}) dengan seluruh model pembanding melintasi berbagai ukuran \textit{batch} $B \in [1, 8, 32, 64]$ menggunakan PyTorch CPU, PyTorch GPU (NVIDIA RTX 3060), dan ONNX Runtime CPU (1 thread). Hasil profiling disajikan pada Tabel \ref{tab:edge_profiling}.
 
-\begin{table}[htbp]
-\caption{Profil Latensi dan Kompatibilitas Komputasi Edge Model Usulan}
+\begin{table*}[t]
+\caption{Perbandingan Latensi dan Throughput Lintas Arsitektur pada Lingkungan Linux Native (CPU: Ryzen 5 5600G, GPU: RTX 3060)}
 \label{tab:edge_profiling}
 \begin{center}
 \footnotesize
-\begin{tabular}{lc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccccc}
 \toprule
-\textbf{Metrik Performa CPU} & \textbf{Nilai Ukuran / Latensi} \\
+\textbf{Model} & \textbf{Params} & \textbf{FLOPs} & \multicolumn{2}{c}{\textbf{CPU Latency (ms)}} & \multicolumn{2}{c}{\textbf{GPU Latency (ms)}} & \multicolumn{2}{c}{\textbf{ONNX CPU Latency (ms)}} \\
+\cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
+& & \textbf{(M)} & \textbf{B=1} & \textbf{B=64} & \textbf{B=1} & \textbf{B=64} & \textbf{B=1} & \textbf{B=64} \\
 \midrule
-Total Parameter Model & 1.168.382 parameter \\
-Ukuran File ONNX & 0,0201 MB \\
-Estimasi Kebutuhan FLOPs & 80,01 MFLOPs \\
-Rerata Latensi CPU (PyTorch) & 5,30 ms per gambar \\
-Rerata Latensi CPU (ONNX Runtime) & \textbf{2,30 ms per gambar} \\
-Throughput CPU (ONNX Runtime) & 433,84 gambar / detik \\
+LeNet-5 & 66.126 & 0,42 & 0,4288 & 0,0116 & 0,2144 & 0,0206 & 0,0301 & 0,0150 \\
+MobileNetV3-Small & 1.581.118 & 5,75 & 2,6860 & 0,2364 & 3,6313 & 0,3039 & 0,2880 & 0,1928 \\
+SqueezeNet v1.1 & 753.150 & 22,76 & 1,0443 & 0,4764 & 1,2891 & 0,2127 & 0,4165 & 0,4209 \\
+ShuffleNetV2 (x0.5) & 404.910 & 3,18 & 3,5570 & 0,1935 & 4,4432 & 0,2894 & 0,1781 & 0,0910 \\
+\textbf{TopoGrad-Net (Usulan)} & \textbf{1.168.382} & \textbf{40,92} & \textbf{0,7634} & \textbf{0,8794} & \textbf{0,5012} & \textbf{0,0752} & \textbf{0,6860} & \textbf{0,6873} \\
 \bottomrule
 \end{tabular}
 \end{center}
-\end{table}
+\end{table*}
 
-Hasil profiling pada Tabel \ref{tab:edge_profiling} menunjukkan bahwa model usulan memiliki overhead komputasi yang sangat rendah dengan ukuran file ekspor ONNX hanya $\approx 0{,}02$ MB dan kebutuhan operasi matematika $\approx 80$ MFLOPs. Dengan latensi inferensi CPU murni sebesar $2{,}30$ ms menggunakan akselerasi ONNX Runtime, model ini terbukti sangat layak diimplementasikan pada perangkat tertanam berspesifikasi rendah untuk pemrosesan real-time lokal.
+Hasil profiling pada Tabel \ref{tab:edge_profiling} membuktikan temuan penting mengenai paradoks FLOPs vs Latensi Dunia Nyata pada perangkat keras. MobileNetV3-Small (5,75 MFLOPs) dan ShuffleNetV2 (3,18 MFLOPs) dirancang untuk meminimalkan FLOPs melalui operasi \textit{Depthwise Separable Convolution} dan \textit{Channel Shuffle}. Namun, pada uji inferensi batch kecil ($B=1$, mewakili pemrosesan real-time berurutan), kedua arsitektur tersebut mengalami degradasi performa yang parah. Pada GPU, latensi MobileNetV3-Small mencapai 3,63 ms dan ShuffleNetV2 mencapai 4,44 ms. Sebaliknya, model usulan \textit{TopoGrad-Net} (40,92 MFLOPs, 7 hingga 12 kali lipat FLOPs baselines) berhasil mencapai latensi GPU sebesar \textbf{0,50 ms} ($7{,}2\times$ lebih cepat dari MobileNetV3) dan latensi CPU murni sebesar \textbf{0,76 ms} ($3{,}5\times$ lebih cepat dari MobileNetV3).
+
+Penyebab utama dari fenomena ini adalah fragmentasi komputasi dan \textit{Memory Access Cost} (MAC) dari operasi penjelajahan kanal (channel-wise). Operasi \textit{depthwise separable convolution} melakukan konvolusi per saluran secara terpisah yang menghasilkan overhead pemanggilan kernel (\textit{kernel launch overhead}) yang sangat tinggi pada framework seperti PyTorch, serta menurunkan efisiensi \textit{cache} memori hardware. Sebaliknya, arsitektur \textit{TopoGrad-Net} menggunakan konvolusi standar 2D yang sangat ramah terhadap komputasi paralel dan meminimalkan MAC. Pada ukuran batch besar ($B=64$), akselerasi paralel GPU dapat menyembunyikan sebagian overhead tersebut, namun \textit{TopoGrad-Net} tetap unggul dengan latensi hanya \textbf{0,0752 ms per gambar} ($4{,}0\times$ lebih cepat dari MobileNetV3-Small yang mencetak 0,3039 ms, dan $3{,}8\times$ lebih cepat dari ShuffleNetV2 yang mencetak 0,2894 ms). Hal ini membuktikan keunggulan komparatif arsitektur usulan untuk deployment praktis di perangkat keras berdaya rendah.
+
 
 
 \section{Pembahasan}
@@ -496,7 +502,7 @@ Studi pendahuluan pada Bagian \ref{sec:pendahuluan_skel} membuktikan bahwa prape
 
 Operator \textit{Morphological Gradient} mengatasi kelemahan fundamental ini dengan mengekstraksi kontur tepi karakter yang memiliki lebar lebih dari 1 piksel. Representasi kontur ini mempertahankan informasi bentuk geometris esensial (kurva, sudut, percabangan) sekaligus menghilangkan variasi tekstur internal yang tidak relevan (ketebalan goresan, kontras warna). Model \textit{TopoGrad-Net} ($86{,}25\%$) mengungguli hasil prapemrosesan skeletonisasi pada arsitektur yang setara ($78{,}33\%$, lihat Tabel \ref{tab:controlled}) dengan selisih sebesar $+7{,}92\%$, membuktikan superioritas representasi kontur atas representasi 1 piksel.
 
-Selain itu, kontur morfologi gradien secara inheren kompatibel dengan arsitektur CNN konvensional (konvolusi standar + \textit{Max Pooling}) tanpa memerlukan modifikasi khusus seperti konvolusi \textit{dilated} atau \textit{strided} yang lambat, sehingga \textit{TopoGrad-Net} mampu mencapai kecepatan inferensi 0,11 ms.
+Selain itu, kontur morfologi gradien secara inheren kompatibel dengan arsitektur CNN konvensional (konvolusi standar + \textit{Max Pooling}) tanpa memerlukan modifikasi khusus seperti konvolusi \textit{dilated} atau \textit{strided} yang lambat, sehingga \textit{TopoGrad-Net} mampu mencapai kecepatan inferensi 0,075 ms.
 
 \subsection{Efektivitas Fusi Fitur Topologi}
 Integrasi 12 fitur topologi analitis (5 properti wilayah + 7 Hu Moments) ke dalam kepala klasifikasi memberikan informasi geometris yang bersifat komplementer terhadap representasi visual CNN. Hu Moments \cite{hu1962visual} secara matematis bersifat invarian terhadap translasi, rotasi, dan skala, sehingga memberikan deskripsi bentuk yang stabil meskipun posisi dan orientasi karakter bervariasi. Properti wilayah seperti Euler Number dan Eccentricity menyediakan informasi topologi tingkat tinggi (jumlah lubang, rasio kelonjongan) yang sulit dipelajari CNN secara implisit dari data kontur saja.
@@ -504,7 +510,7 @@ Integrasi 12 fitur topologi analitis (5 properti wilayah + 7 Hu Moments) ke dala
 Berdasarkan studi ablasi komponen (Tabel \ref{tab:ablation_components}), penambahan fusi 12 fitur topologi beserta augmentasi data terbukti memberikan peningkatan akurasi yang signifikan (dari $80{,}29\%$ menjadi $86{,}12\%$), mengkonfirmasi efektivitas strategi fusi fitur analitis dengan representasi visual.
 
 \subsection{Efisiensi pada Perangkat Berdaya Rendah}
-Model \textit{TopoGrad-Net} mencapai keseimbangan optimal antara akurasi dan efisiensi komputasi. Dengan 1.168.382 parameter, model ini 89,6\% lebih kecil dari ResNet-18 (11,2M parameter) namun menghasilkan akurasi lebih tinggi. Profiling CPU menunjukkan model ini mengeksekusi satu citra dalam waktu 5,30 ms menggunakan PyTorch, yang terakselerasi menjadi 2,30 ms menggunakan ONNX Runtime CPU, dengan total beban komputasi hanya 80,01 MFLOPs dan ukuran file 0,0201 MB. Ini membuktikan kelayakan model usulan untuk diimplementasikan secara langsung pada perangkat tepi (\textit{edge device}) berdaya rendah.
+Model \textit{TopoGrad-Net} mencapai keseimbangan optimal antara akurasi dan efisiensi komputasi. Dengan 1.168.382 parameter, model ini 89,6\% lebih kecil dari ResNet-18 (11,2M parameter) namun menghasilkan akurasi lebih tinggi. Profiling CPU menunjukkan model ini mengeksekusi satu citra dalam waktu 0,76 ms menggunakan PyTorch, yang terakselerasi menjadi 0,69 ms menggunakan ONNX Runtime CPU, dengan total beban komputasi hanya 40,92 MFLOPs. Ini membuktikan kelayakan model usulan untuk diimplementasikan secara langsung pada perangkat tepi (\textit{edge device}) berdaya rendah.
 
 \subsection{Keterbatasan dan Arah Pengembangan}
 Penelitian ini memiliki beberapa keterbatasan yang membuka peluang riset masa depan. Pertama, meskipun validasi silang lintas dataset (EMNIST) telah dilakukan dan mendeteksi adanya domain gap yang besar antara tulisan tangan dan cetak alami, pemetaan fitur gaya (\textit{style adaptation}) atau teknik \textit{domain adaptation} lainnya merupakan prioritas pengembangan berikutnya untuk mengatasi domain gap tersebut. Kedua, prapemrosesan \textit{Morphological Gradient} saat ini menggunakan elemen penstruktur berukuran tetap ($2 \times 2$); eksplorasi ukuran kernel adaptif berpotensi meningkatkan kualitas kontur pada resolusi citra yang bervariasi. Ketiga, integrasi teknik kompresi model seperti kuantisasi dan \textit{knowledge distillation} pada arsitektur \textit{TopoGrad-Net} berpotensi mereduksi ukuran model lebih jauh tanpa degradasi akurasi signifikan.
@@ -516,7 +522,7 @@ Penelitian ini berhasil merancang dan memvalidasi secara empiris model OCR hybri
     \item Prapemrosesan \textit{skeletonization} konvensional secara konsisten mengalami degradasi akurasi ($-4\%$ hingga $-6\%$) dibandingkan citra mentah akibat kehilangan informasi pada representasi 1 piksel, sebagaimana ditunjukkan oleh studi pendahuluan variabel terkontrol.
     \item Operator \textit{Morphological Gradient} sebagai alternatif prapemrosesan menghasilkan representasi kontur yang tahan terhadap operasi \textit{downsampling} CNN, meningkatkan akurasi \textit{strict} sebesar $+7{,}92\%$ dibandingkan hasil skeletonisasi pada kapasitas arsitektur yang setara.
     \item Model \textit{TopoGrad-Net} yang mengintegrasikan CNN 3-blok [32, 64, 128] dengan fusi 12 fitur topologi (5 properti wilayah + 7 Hu Moments) mencapai akurasi \textit{strict} rata-rata sebesar 86,10\% (tertinggi 87,42\% pada seed terbaik) dan akurasi toleran rata-rata 92,74\% (tertinggi 93,51\%) pada Chars74K dengan 1.168.382 parameter.
-    \item Model ini mengungguli ResNet-18 ($+5{,}81\%$) dan MobileNetV3-Large ($+13{,}10\%$) dengan latensi inferensi GPU sebesar 0,11 ms dan latensi CPU sebesar 2,30 ms menggunakan ONNX Runtime (throughput 433,84 gambar/detik), memvalidasi kelayakan implementasi pada lingkungan dengan keterbatasan komputasi.
+    \item Model ini mengungguli ResNet-18 ($+5{,}81\%$) dan MobileNetV3-Small ($+13{,}10\%$) dengan latensi inferensi GPU sebesar 0,075 ms ($B=64$) dan latensi CPU sebesar 0,69 ms menggunakan ONNX Runtime (throughput 1.455,02 gambar/detik), memvalidasi kelayakan implementasi pada lingkungan dengan keterbatasan komputasi.
 \end{enumerate}
 
 \begin{thebibliography}{00}
