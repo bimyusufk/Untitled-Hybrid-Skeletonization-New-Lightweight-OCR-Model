@@ -306,6 +306,8 @@ def evaluate_model_generic(model, test_loader, device, is_hybrid=True, model_nam
         plt.savefig(os.path.join(output_dir, f"prediction_samples_{model_name}.png"), dpi=180, bbox_inches="tight")
         plt.close()
 
+    return strict_accuracy, tolerant_accuracy, macro_f1
+
 # EMNIST Dataset Wrapper
 class EMNISTDataset(Dataset):
     def __init__(self, raw_emnist_dataset, is_training=False):
