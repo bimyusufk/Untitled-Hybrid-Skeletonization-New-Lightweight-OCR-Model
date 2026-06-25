@@ -165,20 +165,31 @@ def train_model_generic(model, train_loader, val_loader, epochs, device, model_n
         "val_acc": []
     }
     
+    log_message(f"Training {model_name} on {device}...")
     for epoch in range(1, epochs + 1):
         model.train()
         running_loss, correct_train, total_train = 0.0, 0, 0
-        for images, feats, labels in train_loader:
+        
+        # Batch progress bar for Training
+        batch_bar = tqdm(train_loader, desc=f"  Epoch {epoch:02d}/{epochs} [Train]", leave=False)
+        for images, feats, labels in batch_bar:
             images, feats, labels = images.to(device), feats.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(images, feats) if is_hybrid else model(images)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+            
             running_loss += loss.item() * images.size(0)
             _, predicted = torch.max(outputs.data, 1)
             total_train += labels.size(0)
             correct_train += (predicted == labels).sum().item()
+            
+            # Real-time batch stats
+            current_loss = running_loss / total_train
+            current_acc = (correct_train / total_train) * 100
+            batch_bar.set_postfix(loss=f"{current_loss:.4f}", acc=f"{current_acc:.2f}%")
+            
         scheduler.step()
         
         epoch_train_loss = running_loss / total_train
@@ -187,8 +198,11 @@ def train_model_generic(model, train_loader, val_loader, epochs, device, model_n
         # Validation
         model.eval()
         val_loss, correct_val, total_val = 0.0, 0, 0
+        
+        # Batch progress bar for Validation
+        val_bar = tqdm(val_loader, desc=f"  Epoch {epoch:02d}/{epochs} [Val]", leave=False)
         with torch.no_grad():
-            for images, feats, labels in val_loader:
+            for images, feats, labels in val_bar:
                 images, feats, labels = images.to(device), feats.to(device), labels.to(device)
                 outputs = model(images, feats) if is_hybrid else model(images)
                 loss = criterion(outputs, labels)
@@ -196,8 +210,22 @@ def train_model_generic(model, train_loader, val_loader, epochs, device, model_n
                 _, predicted = torch.max(outputs.data, 1)
                 total_val += labels.size(0)
                 correct_val += (predicted == labels).sum().item()
+                
+                current_val_loss = val_loss / total_val
+                current_val_acc = (correct_val / total_val) * 100
+                val_bar.set_postfix(loss=f"{current_val_loss:.4f}", acc=f"{current_val_acc:.2f}%")
+                
         epoch_val_loss = val_loss / total_val
         epoch_val_acc = (correct_val / total_val) * 100
+        
+        # Verbose epoch summary
+        lr = optimizer.param_groups[0]['lr']
+        log_message(
+            f"  Epoch {epoch:02d}/{epochs} | "
+            f"Train Loss: {epoch_train_loss:.4f} - Train Acc: {epoch_train_acc:.2f}% | "
+            f"Val Loss: {epoch_val_loss:.4f} - Val Acc: {epoch_val_acc:.2f}% | "
+            f"LR: {lr:.6f}"
+        )
         
         history["train_loss"].append(epoch_train_loss)
         history["val_loss"].append(epoch_val_loss)
