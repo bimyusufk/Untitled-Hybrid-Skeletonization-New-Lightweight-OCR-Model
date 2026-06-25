@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from super_hybrid_benchmarking import (
     CLASS_LIST, NUM_CLASSES, CHAR_TO_IDX, IDX_TO_CHAR, IMAGE_SIZE,
-    SuperDataset, SuperHybridCNN, count_parameters, verify_model_forward,
+    SuperDataset, TopoGradNet, count_parameters, verify_model_forward,
     train_model, train_test_split, SEED
 )
 
@@ -189,7 +189,7 @@ def main():
         )
         
         # Instantiate model
-        model = SuperHybridCNN(NUM_CLASSES, feat_dim=12)
+        model = TopoGradNet(NUM_CLASSES, feat_dim=12)
         
         # Train model
         train_model(

@@ -26,7 +26,7 @@ import onnxruntime as ort
 
 from super_hybrid_benchmarking import (
     CLASS_LIST, NUM_CLASSES, CHAR_TO_IDX, IDX_TO_CHAR, IMAGE_SIZE,
-    SuperDataset, SuperHybridCNN, count_parameters, train_test_split, SEED
+    SuperDataset, TopoGradNet, count_parameters, train_test_split, SEED
 )
 from research.noisy_dataset_generator import add_salt_and_pepper_noise, add_gaussian_blur
 
@@ -408,7 +408,7 @@ def main():
         ("MobileNetV3-Small", lambda num_classes: MobileNetV3SmallWrapper(num_classes), False),
         ("SqueezeNet", lambda num_classes: SqueezeNetWrapper(num_classes), False),
         ("ShuffleNetV2", lambda num_classes: ShuffleNetV2Wrapper(num_classes), False),
-        ("TopoGrad-Net (Proposed)", lambda num_classes: SuperHybridCNN(num_classes, feat_dim=12), True)
+        ("TopoGrad-Net (Proposed)", lambda num_classes: TopoGradNet(num_classes, feat_dim=12), True)
     ]
     
     # 2. RUN TRAINING & EVALUATION

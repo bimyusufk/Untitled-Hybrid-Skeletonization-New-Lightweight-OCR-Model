@@ -26,7 +26,7 @@ import onnxruntime as ort
 
 from super_hybrid_benchmarking import (
     CLASS_LIST, NUM_CLASSES, CHAR_TO_IDX, IDX_TO_CHAR, IMAGE_SIZE,
-    SuperDataset, SuperHybridCNN, count_parameters, train_test_split, SEED
+    SuperDataset, TopoGradNet, count_parameters, train_test_split, SEED
 )
 from research.noisy_dataset_generator import add_salt_and_pepper_noise, add_gaussian_blur
 
